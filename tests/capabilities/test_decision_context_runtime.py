@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from loopx.capabilities.decision_context import cli as decision_context_cli
 from loopx.capabilities.decision_context import (
     DecisionEvidenceRecords,
     LocalFileDecisionSourceProvider,
@@ -67,6 +70,27 @@ def write_profile(
             "automatic_capture": False,
             "fail_open": True,
         },
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def write_extension_context_profile(
+    path: Path,
+    authority_path: Path,
+    *,
+    extension_id: str = "loopx-obelisk",
+) -> Path:
+    payload = json.loads(
+        write_profile(path, authority_path).read_text(encoding="utf-8")
+    )
+    payload["context_provider"] = {
+        "provider": "extension",
+        "namespace": "peer-session",
+        "scope_ref": "host-session:codex:thread-a",
+        "max_results": 4,
+        "timeout_seconds": 10,
+        "config": {"extension_id": extension_id},
     }
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
@@ -221,6 +245,37 @@ def test_profile_runtime_builds_providers_and_returns_private_cursor_proposal(
     )
     assert PRIVATE_CONTENT not in json.dumps(packet, sort_keys=True)
     assert str(authority) not in json.dumps(packet, sort_keys=True)
+
+
+def test_extension_context_provider_failure_fails_open_without_blocking_sources(
+    tmp_path: Path,
+) -> None:
+    authority = tmp_path / "authority.md"
+    authority.write_text(PRIVATE_CONTENT, encoding="utf-8")
+    profile = write_extension_context_profile(
+        tmp_path / "profile.json",
+        authority,
+    )
+
+    activation, assembly = assemble_profile_decision_evidence(
+        goal_id="example-decision-goal",
+        agent_id="example-agent",
+        profile_path=profile,
+        decision_id="decision:adoption",
+        observed_at=OBSERVED_AT,
+        before=BEFORE,
+        rebase=lambda _collection: DecisionEvidenceRecords(),
+        runtime_root=tmp_path / "runtime",
+    )
+
+    assert activation["status"] == "available"
+    assert assembly is not None
+    packet = assembly.public_packet()
+    assert packet["source_scan_receipts"][0]["status"] == "completed"
+    assert packet["context_retrieval_receipt"]["status"] == "unavailable"
+    assert packet["context_retrieval_receipt"]["reason_code"] == (
+        "provider_retrieval_failed"
+    )
 
 
 def test_private_host_provider_drives_generic_scan_exact_read_and_checkpoint(
@@ -410,6 +465,52 @@ def test_prepare_evidence_cli_preserves_private_cursor_until_semantic_rebase(
         "sha256:previous",
     ):
         assert private_value not in serialized
+
+
+def test_prepare_evidence_cli_passes_effective_runtime_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    authority = tmp_path / "authority.md"
+    authority.write_text(PRIVATE_CONTENT, encoding="utf-8")
+    profile = write_profile(tmp_path / "profile.json", authority)
+    captured: dict[str, Any] = {}
+
+    def assemble(**kwargs: Any) -> tuple[dict[str, Any], None]:
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "status": "disabled",
+            "available": False,
+        }, None
+
+    monkeypatch.setattr(
+        decision_context_cli,
+        "assemble_profile_decision_evidence",
+        assemble,
+    )
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        assert main(
+            [
+                "--runtime-root",
+                str(tmp_path / "runtime"),
+                "--format",
+                "json",
+                "decision-context",
+                "prepare-evidence",
+                "--goal-id",
+                "example-decision-goal",
+                "--agent-id",
+                "example-agent",
+                "--profile",
+                str(profile),
+                "--decision-id",
+                "decision:adoption",
+            ]
+        ) == 0
+
+    assert captured["runtime_root"] == tmp_path / "runtime"
 
 
 def test_profile_runtime_fails_open_when_provider_config_cannot_build(

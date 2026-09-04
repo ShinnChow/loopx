@@ -9,6 +9,10 @@ from typing import Any
 
 from ..context_providers import build_context_provider
 from ..context_providers.base import ContextProvider
+from .extension_provider import (
+    EXTENSION_CONTEXT_PROVIDER_ID,
+    build_extension_context_provider,
+)
 from .assembler import (
     DecisionContextAssembly,
     DecisionEvidenceRebaser,
@@ -171,6 +175,8 @@ def _selected_sources(
 
 def _build_advisory_context_provider(
     profile: DecisionContextProfile,
+    *,
+    runtime_root: str | Path | None = None,
 ) -> ContextProvider | None:
     if profile.context_provider is None:
         return None
@@ -180,6 +186,11 @@ def _build_advisory_context_provider(
         **(dict(private_config) if isinstance(private_config, Mapping) else {}),
     }
     try:
+        if binding["provider"] == EXTENSION_CONTEXT_PROVIDER_ID:
+            return build_extension_context_provider(
+                binding,
+                runtime_root=runtime_root,
+            )
         return build_context_provider(binding)
     except Exception:
         return _UnavailableContextProvider()
@@ -199,6 +210,7 @@ def assemble_profile_decision_evidence(
     recall_query: str = "current decision evidence",
     recall_query_summary: str = "current decision evidence",
     timeout_seconds: float | None = None,
+    runtime_root: str | Path | None = None,
     source_provider_overrides: Mapping[str, DecisionSourceProvider] | None = None,
 ) -> tuple[dict[str, Any], DecisionContextAssembly | None]:
     """Resolve one enabled profile and assemble evidence without applying cursors.
@@ -253,7 +265,10 @@ def assemble_profile_decision_evidence(
         ),
         cursors=cursors,
         rebase=rebase,
-        context_provider=_build_advisory_context_provider(profile),
+        context_provider=_build_advisory_context_provider(
+            profile,
+            runtime_root=runtime_root,
+        ),
         context_namespace=str(context_config.get("namespace") or "decision-context"),
         context_scope_ref=str(context_config.get("scope_ref") or "goal"),
         recall_query=recall_query,

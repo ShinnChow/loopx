@@ -194,6 +194,7 @@ def register_decision_context_commands(
 def handle_decision_context_command(
     args: argparse.Namespace,
     *,
+    runtime_root: Path | None,
     output_format: FormatSelector,
     print_payload: PrintPayload,
 ) -> int | None:
@@ -232,6 +233,7 @@ def handle_decision_context_command(
             ),
             rebase=lambda _collection: records,
             timeout_seconds=getattr(args, "timeout_seconds", None),
+            runtime_root=runtime_root,
         )
         settlement_required = bool(
             assembly is not None and assembly.proposed_cursors
