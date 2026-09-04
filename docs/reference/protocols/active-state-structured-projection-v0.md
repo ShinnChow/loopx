@@ -138,8 +138,28 @@ The cutover is deliberately section-sized, not document-sized:
 
 The first write using this boundary is Todo claim. It exercises a complete
 provider-neutral TypeScript transaction while leaving the default local path
-unchanged. Deterministic Markdown regeneration is a later migration step, not
-an implicit side effect of promotion.
+unchanged. After promotion, `loopx todo project-markdown` can explicitly
+regenerate the two active Todo sections from the exact provider revision. It
+never runs before promotion and never turns Markdown back into authority.
+
+The projection command has four safety properties:
+
+- it replaces only the active user and agent Todo section spans;
+- it preserves every segment outside those spans byte-for-byte;
+- it fails closed when a canonical field cannot be represented by the current
+  Markdown metadata grammar, rather than dropping that field;
+- it parses the rendered sections back and requires deterministic parity and
+  idempotent second rendering before an `--execute` write.
+
+Each section includes a compact `loopx:todo-section-projection-v0` marker with
+the canonical provider revision and a SHA-256 digest of the complete canonical
+records for that role. The marker is lineage evidence, not a write API.
+
+Rollback is intentionally asymmetric. Before promotion, the existing shadow
+rollback quarantines the candidate provider lineage and Markdown remains
+canonical. After promotion, a provider outage or revision mismatch fails
+closed; operators may restore a reviewed provider snapshot and regenerate the
+Todo sections, but must not promote stale Markdown back to canonical truth.
 
 ## Migration Path
 
@@ -149,7 +169,7 @@ an implicit side effect of promotion.
    the same projection fields.
 4. Promote one complete provider-backed mutation at a time behind the durable
    writer fence; keep the default Markdown mode unchanged.
-5. Regenerate only machine-owned sections from canonical state, preserving
-   human narrative and validating parse/render parity.
+5. Regenerate only machine-owned sections from one exact canonical provider
+   revision, preserving human narrative and validating parse/render parity.
 6. Promote a provider projection only after rollback and idempotency checks are
    in place.
