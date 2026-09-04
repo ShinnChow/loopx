@@ -70,6 +70,40 @@ and Todo commands. Include `--agent-id <REGISTERED_AGENT_ID>` only when the
 current session already owns that identity, the thread binding resolves to it,
 or the user explicitly asks to take over that exact agent's work.
 
+When another Codex task supplies a copied `codex://threads/<thread-id>` deep
+link for review, handoff, or coordination, resolve it read-only before acting.
+If the purpose is only identity confirmation, use:
+
+```bash
+loopx resolve-agent-thread --thread-link '<deep-link>'
+```
+
+Treat the returned `session_locator` as an address only. Require a unique
+`bound` Goal and Agent before relying on LoopX identity.
+
+When the intended outcome is project context sharing, state both tasks'
+responsibilities and keep the read separate from authority. If the current host
+offers read-only task inspection, it may use the resolved `thread_id` directly.
+If a Decision Context profile explicitly enables an extension provider, copy
+the returned `context_scope_ref` into that ignored owner-local profile and run
+`loopx decision-context prepare-evidence`. The optional `loopx-obelisk` package
+implements this path for indexed local Codex history; other harnesses may supply
+the same provider protocol. Do not message, resume, interrupt, fork, bind,
+claim, or mutate the source task as part of context retrieval.
+
+Treat recalled transcript text as transient advisory context. Check claims
+against current authority sources, and promote only the required conclusions
+into the owning Goal's Todo evidence, Agent evidence log, registered material,
+or governed amendment. Never copy a full transcript, raw tool output,
+credentials, private URLs, or local absolute paths into public packets. If the
+provider is disabled or unavailable, Decision Context records degraded provider
+health and continues with the remaining authority sources.
+
+The deep link and provider retrieval do not grant permissions, workspace
+access, claims, leases, lifecycle authority, execution authority, or write
+scope. Recheck the normal control-plane gates immediately before any controlled
+action or writeback. Use separate worktrees for concurrent code writes.
+
 When a stable thread id is present but has no binding, treat it as a new host
 session and follow the returned fresh-registration default. Select an existing
 lane only when the user explicitly requests takeover of that exact agent, then

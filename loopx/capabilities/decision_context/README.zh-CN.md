@@ -142,6 +142,13 @@ loopx decision-context prepare-evidence \
   --format json
 ```
 
+可选 extension 可以实现现有 advisory `ContextProvider` 端口。例如，
+`packages/loopx-obelisk` 接受 normalized
+`host-session:codex:<thread-id>` scope，并通过 Obelisk 的公开 CLI 有界检索历史任务
+消息。Profile 通过 `context_provider.provider=extension` 选择该路径；
+`config.extension_id` 可以指定精确 provider，否则必须恰好存在一个 enabled 且
+doctor-ready 的实现。Provider 失败继续 fail open，原始召回文本不会进入公开 packet。
+
 `prepare-evidence` 刻意保持只读。领域 adapter 可以提交严格的语义 rebase，并把
 尚未应用的 cursor proposal 写入私有 pending checkpoint：
 

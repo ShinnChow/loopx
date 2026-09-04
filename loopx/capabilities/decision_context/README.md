@@ -160,6 +160,15 @@ loopx decision-context prepare-evidence \
   --format json
 ```
 
+An optional extension can implement the existing advisory `ContextProvider`
+port. For example, `packages/loopx-obelisk` accepts a normalized
+`host-session:codex:<thread-id>` scope and retrieves bounded historical task
+messages through Obelisk's public CLI. The profile selects it with
+`context_provider.provider=extension`; `config.extension_id` may name the exact
+provider, otherwise exactly one enabled, doctor-ready implementation must be
+available. Provider failure remains fail-open, and raw recalled text never
+enters the public packet.
+
 `prepare-evidence` is deliberately read only. A domain adapter can provide a
 strict semantic rebase and persist an unapplied private checkpoint:
 

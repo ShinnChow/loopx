@@ -5,12 +5,14 @@ on:
     paths:
       - ".github/workflows/package-smoke.yml"
       - "packages/loopx-repo-health/**"
+      - "packages/loopx-obelisk/**"
   push:
     branches:
       - main
     paths:
       - ".github/workflows/package-smoke.yml"
       - "packages/loopx-repo-health/**"
+      - "packages/loopx-obelisk/**"
 
 permissions:
   contents: read
@@ -42,3 +44,26 @@ jobs:
         run: >-
           python
           packages/loopx-repo-health/smoke/repo_health_snapshot_smoke.py
+
+  obelisk:
+    name: loopx-obelisk
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Compile package modules
+        run: >-
+          python -m py_compile
+          packages/loopx-obelisk/src/loopx_obelisk/*.py
+
+      - name: Run offline contract smoke
+        run: >-
+          python
+          packages/loopx-obelisk/smoke/obelisk_provider_smoke.py
