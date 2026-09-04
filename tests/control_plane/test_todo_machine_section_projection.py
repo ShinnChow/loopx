@@ -270,3 +270,63 @@ def test_project_markdown_cli_uses_raw_provider_records(
 
     assert result == 0
     assert captured["todo_count"] == len(raw_records)
+
+
+def test_project_markdown_cli_publishes_with_atomic_replace(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
+    state_path.write_text(SOURCE, encoding="utf-8")
+    monkeypatch.setattr(
+        todo_command,
+        "load_registry",
+        lambda _path: {"common_runtime_root": str(tmp_path / "runtime")},
+    )
+    monkeypatch.setattr(
+        todo_command,
+        "read_canonical_todos_if_promoted",
+        lambda **_kwargs: {
+            "todos": _records(),
+            "source_authority": "file_v0",
+            "provider_revision": "rev-1",
+        },
+    )
+    monkeypatch.setattr(
+        todo_command,
+        "resolve_todo_state_path",
+        lambda **_kwargs: (tmp_path, state_path),
+    )
+    replacements: list[tuple[object, object]] = []
+    real_replace = todo_command.os.replace
+
+    def record_replace(source, target) -> None:
+        replacements.append((source, target))
+        real_replace(source, target)
+
+    monkeypatch.setattr(todo_command.os, "replace", record_replace)
+
+    result = todo_command.handle_todo_command(
+        build_parser().parse_args(
+            [
+                "todo",
+                "project-markdown",
+                "--goal-id",
+                "goal-a",
+                "--provider-revision",
+                "rev-1",
+                "--execute",
+            ]
+        ),
+        registry_path=tmp_path / "registry.json",
+        runtime_root_arg=None,
+        print_payload=lambda *_args: None,
+        append_cli_rollout_event=lambda *_args, **_kwargs: None,
+    )
+
+    assert result == 0
+    assert len(replacements) == 1
+    temporary, target = replacements[0]
+    assert target == state_path
+    assert temporary != target
+    assert "todo_agent" in state_path.read_text(encoding="utf-8")

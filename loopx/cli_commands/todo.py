@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import os
+import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -81,6 +83,24 @@ from .post_writeback import (
     PostWritebackProjectionBuilder,
     dispatch_committed_cli_post_writeback_hooks,
 )
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Replace a projection without exposing a partially written state file."""
+
+    descriptor, temporary = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    temporary_path = Path(temporary)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
 
 PrintPayload = Callable[
     [dict[str, object], str, Callable[[dict[str, object]], str]],
@@ -824,7 +844,7 @@ def handle_todo_command(
                     provider_revision=args.provider_revision,
                 )
                 if args.execute and projection.changed:
-                    state_path.write_text(projection.markdown, encoding="utf-8")
+                    _atomic_write_text(state_path, projection.markdown)
                     if state_path.read_text(encoding="utf-8") != projection.markdown:
                         raise RuntimeError("Todo Markdown projection readback mismatch")
             payload = {
