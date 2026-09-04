@@ -102,6 +102,13 @@ def _atomic_write_text(path: Path, text: str) -> None:
         temporary_path.unlink(missing_ok=True)
 
 
+def _read_text_exact(path: Path) -> str:
+    """Decode UTF-8 while preserving every source newline sequence."""
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return handle.read()
+
+
 PrintPayload = Callable[
     [dict[str, object], str, Callable[[dict[str, object]], str]],
     None,
@@ -837,7 +844,7 @@ def handle_todo_command(
                 state_path,
                 operation="project_canonical_todo_sections",
             ):
-                source = state_path.read_text(encoding="utf-8")
+                source = _read_text_exact(state_path)
                 projection = render_canonical_todo_sections(
                     source,
                     authority_read["todos"],
@@ -845,7 +852,7 @@ def handle_todo_command(
                 )
                 if args.execute and projection.changed:
                     _atomic_write_text(state_path, projection.markdown)
-                    if state_path.read_text(encoding="utf-8") != projection.markdown:
+                    if _read_text_exact(state_path) != projection.markdown:
                         raise RuntimeError("Todo Markdown projection readback mismatch")
             payload = {
                 "ok": True,

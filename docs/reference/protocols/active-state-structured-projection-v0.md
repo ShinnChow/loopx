@@ -154,6 +154,11 @@ The projection command has four safety properties:
 Each section includes a compact `loopx:todo-section-projection-v0` marker with
 the canonical provider revision and a SHA-256 digest of the complete canonical
 records for that role. The marker is lineage evidence, not a write API.
+The command proves that the rendered records came from the exact provider head
+observed at read time. It does not claim that the revision remains the current
+head after that read; a later canonical mutation makes the Markdown projection
+stale and requires another explicit projection. Consumers must always read the
+provider, never the Markdown marker, when they need current authority state.
 
 Rollback is intentionally asymmetric. Before promotion, the existing shadow
 rollback quarantines the candidate provider lineage and Markdown remains

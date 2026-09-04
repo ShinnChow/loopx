@@ -330,3 +330,57 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
     assert target == state_path
     assert temporary != target
     assert "todo_agent" in state_path.read_text(encoding="utf-8")
+
+
+def test_project_markdown_cli_preserves_crlf_narrative_bytes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
+    source_bytes = SOURCE.replace("\n", "\r\n").encode("utf-8")
+    state_path.write_bytes(source_bytes)
+    monkeypatch.setattr(
+        todo_command,
+        "load_registry",
+        lambda _path: {"common_runtime_root": str(tmp_path / "runtime")},
+    )
+    monkeypatch.setattr(
+        todo_command,
+        "read_canonical_todos_if_promoted",
+        lambda **_kwargs: {
+            "todos": _records(),
+            "source_authority": "file_v0",
+            "provider_revision": "rev-1",
+        },
+    )
+    monkeypatch.setattr(
+        todo_command,
+        "resolve_todo_state_path",
+        lambda **_kwargs: (tmp_path, state_path),
+    )
+
+    result = todo_command.handle_todo_command(
+        build_parser().parse_args(
+            [
+                "todo",
+                "project-markdown",
+                "--goal-id",
+                "goal-a",
+                "--provider-revision",
+                "rev-1",
+                "--execute",
+            ]
+        ),
+        registry_path=tmp_path / "registry.json",
+        runtime_root_arg=None,
+        print_payload=lambda *_args: None,
+        append_cli_rollout_event=lambda *_args, **_kwargs: None,
+    )
+
+    assert result == 0
+    projected = state_path.read_bytes()
+    assert b"\r\n" in projected
+    assert b"Human rationale stays here.\r\n" in projected
+    assert b"Do not rewrite this paragraph.\r\n" in projected
+    assert b"Continue the approved migration.\r\n" in projected
+    assert b"\n" not in projected.replace(b"\r\n", b"")
