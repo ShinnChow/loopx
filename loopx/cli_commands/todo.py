@@ -86,6 +86,16 @@ from .post_writeback import (
 )
 
 
+def _fsync_parent_directory(path: Path) -> None:
+    if os.name != "posix":  # pragma: no cover - Windows has no directory fsync
+        return
+    descriptor = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_write_text(path: Path, text: str) -> None:
     """Durably replace a projection without changing the state-file mode."""
 
@@ -101,12 +111,7 @@ def _atomic_write_text(path: Path, text: str) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, path)
-        if os.name == "posix":
-            directory_descriptor = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory_descriptor)
-            finally:
-                os.close(directory_descriptor)
+        _fsync_parent_directory(path)
     finally:
         temporary_path.unlink(missing_ok=True)
 
