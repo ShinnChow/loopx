@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import stat
 import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -86,18 +87,26 @@ from .post_writeback import (
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
-    """Replace a projection without exposing a partially written state file."""
+    """Durably replace a projection without changing the state-file mode."""
 
+    original_mode = stat.S_IMODE(path.stat().st_mode)
     descriptor, temporary = tempfile.mkstemp(
         prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
     )
     temporary_path = Path(temporary)
     try:
+        os.fchmod(descriptor, original_mode)
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
             handle.write(text)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, path)
+        if os.name == "posix":
+            directory_descriptor = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_descriptor)
+            finally:
+                os.close(directory_descriptor)
     finally:
         temporary_path.unlink(missing_ok=True)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import stat
 from copy import deepcopy
 
 import pytest
@@ -278,6 +279,7 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
 ) -> None:
     state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
     state_path.write_text(SOURCE, encoding="utf-8")
+    state_path.chmod(0o640)
     monkeypatch.setattr(
         todo_command,
         "load_registry",
@@ -330,6 +332,7 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
     assert target == state_path
     assert temporary != target
     assert "todo_agent" in state_path.read_text(encoding="utf-8")
+    assert stat.S_IMODE(state_path.stat().st_mode) == 0o640
 
 
 def test_project_markdown_cli_preserves_crlf_narrative_bytes(
