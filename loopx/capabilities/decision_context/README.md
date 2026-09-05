@@ -260,9 +260,19 @@ loopx decision-context prepare-captured --goal-id <goal-id> --agent-id <agent-id
 A domain host can instead use `assemble_captured_decision_evidence` with a
 `rebase` callback to inspect transient exact content. Preparing evidence does
 not acknowledge a batch. Use the existing `settle-review` path above; a later
-capture tick retires only a prefix whose cursor already matches the supplied
-**settlement-owned reviewed cursor file**. Never substitute capture cursors for
-that file or manually manufacture reviewed cursors.
+capture tick retires only the oldest batch whose before/after cursors match a
+newly observed transition in the **settlement-owned reviewed cursor file**.
+Unchanged reviewed cursors never acknowledge later batches, including A→B→A
+source changes. Capture-owned observations are not review authority. Never
+substitute capture cursors for that file or manually manufacture reviewed cursors.
+
+If several settlements occur between ticks, their intermediate transitions may
+be unobservable; ambiguous batches are retained, not inferred to be reviewed.
+An older spool without review observations is baselined without retiring rows.
+For either hold, reconcile against actual review evidence explicitly; if starting
+a new spool after a current-source rebase, retain the old spool as a private
+checkpoint. This conservative protocol does not promise automatic queue drainage
+after skipped review transitions.
 
 This is a change-reference spool, **not a lossless source archive**. First-scan
 history, pagination, late edits, deletion visibility and deadlines remain provider

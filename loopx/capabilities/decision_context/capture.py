@@ -47,6 +47,8 @@ def _open_spool(path: Path, *, goal_id: str, agent_id: str) -> sqlite3.Connectio
                 id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT NOT NULL,
                 cursor_before TEXT, cursor_after TEXT NOT NULL,
                 before_time TEXT NOT NULL, receipt TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS review_observations (
+                source_id TEXT PRIMARY KEY, cursor TEXT);
         """)
         db.execute("BEGIN IMMEDIATE")
         identity = db.execute("SELECT goal, agent FROM identity").fetchone()
@@ -114,12 +116,15 @@ def capture_profile_sources(
     """Run a bounded tick. Disabled profiles and preview never create a spool.
 
     Reviewed cursors, if supplied, must be the existing settlement-owned file.
-    A matching cursor retires captured prefixes; this function never writes it.
+    A newly observed review transition may retire only the oldest matching batch.
+    Ambiguous or unobserved transitions retain batches; capture never writes review.
     Provider deadlines are cooperative, so hosts must also bound process runtime.
     """
     if isinstance(timeout_seconds, bool) or not 0 < timeout_seconds <= 60:
         raise ValueError("capture timeout must be between 0 and 60 seconds")
     overrides = source_provider_overrides or {}
+    profile_path = profile_path.expanduser()
+    digest_before = private_file_digest(profile_path) if profile_path.exists() else None
     activation, profile = resolve_decision_context_activation(
         goal_id=goal_id,
         agent_id=agent_id,
@@ -137,6 +142,8 @@ def capture_profile_sources(
             "status": "capture_disabled",
             "executed": False,
         }
+    if private_file_digest(profile_path) != digest_before:
+        raise ValueError("capture profile changed during activation")
     if spool_path.resolve() == profile_path.resolve() or (
         cursor_path and spool_path.resolve() == cursor_path.resolve()
     ):
@@ -161,7 +168,6 @@ def capture_profile_sources(
             }
     now = datetime.now(timezone.utc)
     observed_at = now.isoformat()
-    digest_before = private_file_digest(profile_path)
     sources = tuple(
         source
         for source in profile.sources
@@ -170,9 +176,9 @@ def capture_profile_sources(
     providers = _build_source_providers(
         profile, sources=sources, source_provider_overrides=overrides
     )
-    reviewed = load_private_decision_cursors(cursor_path, profile=profile)
     db = _open_spool(spool_path, goal_id=goal_id, agent_id=agent_id)
     try:
+        reviewed = load_private_decision_cursors(cursor_path, profile=profile)
         for source in sources:
             binding = _binding_digest(profile, source)
             row = db.execute(
@@ -184,17 +190,30 @@ def capture_profile_sources(
                     (source.source_id,),
                 )
                 continue
-            # Retire only an exact cursor prefix already committed by review settlement.
-            if source.source_id in reviewed:
-                settled = db.execute(
-                    "SELECT max(id) FROM batches WHERE source_id=? AND cursor_after=?",
-                    (source.source_id, reviewed[source.source_id]),
-                ).fetchone()[0]
-                if settled is not None:
-                    db.execute(
-                        "DELETE FROM batches WHERE source_id=? AND id<=?",
-                        (source.source_id, settled),
-                    )
+            # Cursor equality alone is not an acknowledgement (A -> B -> A).
+            # Baseline legacy spools without deleting anything; only an observed
+            # transition matching the oldest pending batch can retire that batch.
+            previous = db.execute(
+                "SELECT cursor FROM review_observations WHERE source_id=?",
+                (source.source_id,),
+            ).fetchone()
+            current_review = reviewed.get(source.source_id)
+            if previous is not None and previous["cursor"] != current_review:
+                oldest = db.execute(
+                    "SELECT id, cursor_before, cursor_after FROM batches "
+                    "WHERE source_id=? ORDER BY id LIMIT 1",
+                    (source.source_id,),
+                ).fetchone()
+                if (
+                    oldest is not None
+                    and oldest["cursor_before"] == previous["cursor"]
+                    and oldest["cursor_after"] == current_review
+                ):
+                    db.execute("DELETE FROM batches WHERE id=?", (oldest["id"],))
+            db.execute(
+                "INSERT OR REPLACE INTO review_observations VALUES (?, ?)",
+                (source.source_id, current_review),
+            )
             if (
                 row
                 and row["checked_at"]

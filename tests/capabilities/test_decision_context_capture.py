@@ -60,6 +60,29 @@ def test_explicit_opt_in_and_read_only_preview(setup):
         normalize_decision_context_profile(payload)
 
 
+def settle_batch(args, batch_id, rebase=None, *, assembly=None):
+    assembly = assembly or assemble_captured_decision_evidence(
+        **args,
+        batch_id=batch_id,
+        decision_id=f"review-{batch_id}",
+        rebase=rebase or (lambda _: DecisionEvidenceRecords(semantic_no_change=True)),
+    )
+    assert assembly.proposed_cursors
+    settled = settle_profile_decision_review(
+        goal_id=args["goal_id"],
+        agent_id=args["agent_id"],
+        profile_path=args["profile_path"],
+        cursor_path=args["cursor_path"],
+        assembly=assembly,
+        lifecycle_event_log_path=args["spool_path"].parent / "events.jsonl",
+        actor_ref="agent:example-agent",
+        reason_code="no_material_change",
+        summary="The verified change does not alter the current decision.",
+        execute=True,
+    )
+    assert settled["disposition"] == "no_change"
+
+
 def test_capture_replay_and_review_cursor_separation(setup):
     args, _, _ = setup
     captured = capture_profile_sources(**args, execute=True)
@@ -76,25 +99,9 @@ def test_capture_replay_and_review_cursor_separation(setup):
         reads.extend(item.content for item in collection.authority)
         return DecisionEvidenceRecords(semantic_no_change=True)
 
-    assembly = assemble_captured_decision_evidence(
-        **args, batch_id=1, decision_id="review-example", rebase=rebase
-    )
+    settle_batch(args, 1, rebase)
     assert reads == ["private-body-not-for-spool"]
-    assert assembly.proposed_cursors
     assert capture_profile_sources(**args)["pending_batch_count"] == 1
-    settled = settle_profile_decision_review(
-        goal_id=args["goal_id"],
-        agent_id=args["agent_id"],
-        profile_path=args["profile_path"],
-        cursor_path=args["cursor_path"],
-        assembly=assembly,
-        lifecycle_event_log_path=args["spool_path"].parent / "events.jsonl",
-        actor_ref="agent:example-agent",
-        reason_code="no_material_change",
-        summary="The verified change does not alter the current decision.",
-        execute=True,
-    )
-    assert settled["disposition"] == "no_change"
     assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 0
 
 
@@ -226,3 +233,126 @@ def test_capture_cli_and_status_are_public_safe(setup, capsys):
     )
     assert json.loads(capsys.readouterr().out)["pending_batch_count"] == 1
     assert args["spool_path"].read_bytes() == before
+
+
+def test_old_review_cursor_does_not_retire_unreviewed_aba_batches(setup):
+    args, _, authority = setup
+    original = authority.read_text()
+    capture_profile_sources(**args, execute=True)
+    settle_batch(args, 1)
+    assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 0
+    reviewed = args["cursor_path"].read_bytes()
+    for body, expected in [("intermediate-change", 1), (original, 2)]:
+        authority.write_text(body)
+        with sqlite3.connect(args["spool_path"]) as db:
+            db.execute("UPDATE sources SET checked_at=NULL")
+        assert (
+            capture_profile_sources(**args, execute=True)["pending_batch_count"]
+            == expected
+        )
+    for _ in range(2):
+        assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 2
+    assert args["cursor_path"].read_bytes() == reviewed
+
+
+@pytest.mark.parametrize("change", ["disable", "binding"])
+def test_profile_change_during_activation_is_rejected_before_capture(
+    setup, monkeypatch, change
+):
+    from loopx.capabilities.decision_context import capture
+
+    args, payload, _ = setup
+    resolve = capture.resolve_decision_context_activation
+
+    def changing_resolve(**kwargs):
+        result = resolve(**kwargs)
+        if change == "disable":
+            payload["automation"]["automatic_capture"] = False
+        else:
+            payload["sources"][0]["private_locator"] += ".rebound"
+        args["profile_path"].write_text(json.dumps(payload))
+        return result
+
+    monkeypatch.setattr(
+        capture, "resolve_decision_context_activation", changing_resolve
+    )
+    with pytest.raises(ValueError, match="profile changed"):
+        capture_profile_sources(**args, execute=True)
+    assert not args["spool_path"].exists()
+
+
+def test_review_transitions_retire_one_batch_including_reused_cursor(setup):
+    args, _, authority = setup
+    original = authority.read_text()
+    for batch_id, body in enumerate([original, "intermediate", original], start=1):
+        authority.write_text(body)
+        if args["spool_path"].exists():
+            with sqlite3.connect(args["spool_path"]) as db:
+                db.execute("UPDATE sources SET checked_at=NULL")
+        assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 1
+        settle_batch(args, batch_id)
+        assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 0
+
+
+def test_new_review_retires_only_oldest_duplicate_cursor_batch(setup):
+    args, _, authority = setup
+    original = authority.read_text()
+    capture_profile_sources(**args, execute=True)
+    assembly = assemble_captured_decision_evidence(
+        **args,
+        batch_id=1,
+        decision_id="review-1",
+        rebase=lambda _: DecisionEvidenceRecords(semantic_no_change=True),
+    )
+    for body in ["intermediate", original]:
+        authority.write_text(body)
+        with sqlite3.connect(args["spool_path"]) as db:
+            db.execute("UPDATE sources SET checked_at=NULL")
+        capture_profile_sources(**args, execute=True)
+    settle_batch(args, 1, assembly=assembly)
+    assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 2
+    with sqlite3.connect(args["spool_path"]) as db:
+        assert db.execute("SELECT id FROM batches ORDER BY id").fetchall() == [
+            (2,),
+            (3,),
+        ]
+
+
+def test_legacy_spool_without_review_observations_retains_batches(setup):
+    args, _, _ = setup
+    capture_profile_sources(**args, execute=True)
+    settle_batch(args, 1)
+    with sqlite3.connect(args["spool_path"]) as db:
+        db.execute("DROP TABLE review_observations")
+    for _ in range(2):
+        assert capture_profile_sources(**args, execute=True)["pending_batch_count"] == 1
+
+
+@pytest.mark.parametrize("change", ["disable", "binding"])
+def test_profile_change_during_scan_rolls_back_progress(setup, change):
+    args, payload, _ = setup
+
+    class ChangingProvider(LocalFileDecisionSourceProvider):
+        def scan(self, **kwargs):
+            result = super().scan(**kwargs)
+            if change == "disable":
+                payload["automation"]["automatic_capture"] = False
+            else:
+                payload["sources"][0]["private_locator"] += ".rebound"
+            args["profile_path"].write_text(json.dumps(payload))
+            return result
+
+    with pytest.raises(ValueError, match="profile changed"):
+        capture_profile_sources(
+            **args,
+            execute=True,
+            source_provider_overrides={
+                "local-authority": ChangingProvider(
+                    provider_id="local-authority", max_bytes=4096
+                )
+            },
+        )
+    with sqlite3.connect(args["spool_path"]) as db:
+        for table in ["sources", "batches", "review_observations"]:
+            assert db.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0
+    assert not args["cursor_path"].exists()
