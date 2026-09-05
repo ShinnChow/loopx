@@ -181,6 +181,13 @@
     "planning_packet_request_schema": "quota_planning_packet_request_v0",
     "planning_packet_result_schema": "quota_planning_packet_v0"
   },
+  "todo_resume_protocol": {
+    "normalize_request_schema": "todo_resume_normalize_request_v0",
+    "evaluation_request_schema": "todo_resume_evaluation_request_v0",
+    "evaluation_result_schema": "todo_resume_evaluation_v0",
+    "external_wait_request_schema": "todo_external_wait_request_v0",
+    "external_wait_result_schema": "todo_external_wait_transition_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",

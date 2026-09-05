@@ -34,6 +34,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "task_lease_protocol",
     "capability_hook_protocol",
     "action_portfolio_protocol",
+    "todo_resume_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -132,6 +133,13 @@ ACTION_PORTFOLIO_PROTOCOL_KEYS = (
     "selection_result_schema",
     "planning_packet_request_schema",
     "planning_packet_result_schema",
+)
+TODO_RESUME_PROTOCOL_KEYS = (
+    "normalize_request_schema",
+    "evaluation_request_schema",
+    "evaluation_result_schema",
+    "external_wait_request_schema",
+    "external_wait_result_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -291,6 +299,16 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("action portfolio protocol schemas must be non-empty strings")
     if len(set(action_portfolio.values())) != len(action_portfolio):
         raise ValueError("action portfolio protocol schemas must be unique")
+    todo_resume = raw.get("todo_resume_protocol")
+    if not isinstance(todo_resume, dict) or tuple(todo_resume) != TODO_RESUME_PROTOCOL_KEYS:
+        raise ValueError("Todo resume protocol has unexpected fields or order")
+    if any(
+        not isinstance(todo_resume.get(key), str) or not todo_resume[key]
+        for key in TODO_RESUME_PROTOCOL_KEYS
+    ):
+        raise ValueError("Todo resume protocol schemas must be non-empty strings")
+    if len(set(todo_resume.values())) != len(todo_resume):
+        raise ValueError("Todo resume protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -365,6 +383,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"ACTION_PORTFOLIO_{key.upper()}: Final[str] = {action_portfolio[key]!r}"
         for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
     )
+    todo_resume = contract["todo_resume_protocol"]
+    todo_resume_constants = "\n".join(
+        f"TODO_RESUME_{key.upper()}: Final[str] = {todo_resume[key]!r}"
+        for key in TODO_RESUME_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -386,6 +409,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"
+        f"\n{todo_resume_constants}\n"
     )
 
 
@@ -436,6 +460,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.action_portfolio_protocol.{key};"
         for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
     )
+    todo_resume_constants = "\n".join(
+        f"export const TODO_RESUME_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.todo_resume_protocol.{key};"
+        for key in TODO_RESUME_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -455,6 +484,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"
+        f"\n{todo_resume_constants}\n"
     )
 
 

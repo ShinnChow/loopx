@@ -202,6 +202,13 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "planning_packet_request_schema": "quota_planning_packet_request_v0",
     "planning_packet_result_schema": "quota_planning_packet_v0"
   },
+  "todo_resume_protocol": {
+    "normalize_request_schema": "todo_resume_normalize_request_v0",
+    "evaluation_request_schema": "todo_resume_evaluation_request_v0",
+    "evaluation_result_schema": "todo_resume_evaluation_v0",
+    "external_wait_request_schema": "todo_external_wait_request_v0",
+    "external_wait_result_schema": "todo_external_wait_transition_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -285,3 +292,9 @@ export const ACTION_PORTFOLIO_SELECTION_REQUEST_SCHEMA = COORDINATION_STATE_CONT
 export const ACTION_PORTFOLIO_SELECTION_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.selection_result_schema;
 export const ACTION_PORTFOLIO_PLANNING_PACKET_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.planning_packet_request_schema;
 export const ACTION_PORTFOLIO_PLANNING_PACKET_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.planning_packet_result_schema;
+
+export const TODO_RESUME_NORMALIZE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.todo_resume_protocol.normalize_request_schema;
+export const TODO_RESUME_EVALUATION_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.todo_resume_protocol.evaluation_request_schema;
+export const TODO_RESUME_EVALUATION_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.todo_resume_protocol.evaluation_result_schema;
+export const TODO_RESUME_EXTERNAL_WAIT_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.todo_resume_protocol.external_wait_request_schema;
+export const TODO_RESUME_EXTERNAL_WAIT_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.todo_resume_protocol.external_wait_result_schema;
