@@ -113,12 +113,12 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
                    'markdown_role': 'human_workbench_and_compatibility_projection'}})
-LOCAL_COORDINATION_MUTATION_REQUEST_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['mutation_request_schema']
-LOCAL_COORDINATION_MUTATION_RESULT_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['mutation_result_schema']
-LOCAL_COORDINATION_TODO_READ_REQUEST_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['todo_read_request_schema']
-LOCAL_COORDINATION_TODO_READ_RESULT_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['todo_read_result_schema']
-LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['todo_list_request_schema']
-LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['todo_list_result_schema']
-LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['promotion_request_schema']
-LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['promotion_result_schema']
-LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA: Final = COORDINATION_STATE_CONTRACT['local_authority_protocol']['promotion_receipt_schema']
+LOCAL_COORDINATION_MUTATION_REQUEST_SCHEMA: Final[str] = 'loopx_local_coordination_mutation_request_v0'
+LOCAL_COORDINATION_MUTATION_RESULT_SCHEMA: Final[str] = 'loopx_local_coordination_mutation_result_v0'
+LOCAL_COORDINATION_TODO_READ_REQUEST_SCHEMA: Final[str] = 'loopx_local_coordination_todo_read_request_v0'
+LOCAL_COORDINATION_TODO_READ_RESULT_SCHEMA: Final[str] = 'loopx_local_coordination_todo_read_result_v0'
+LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA: Final[str] = 'loopx_local_coordination_todo_list_request_v0'
+LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA: Final[str] = 'loopx_local_coordination_todo_list_result_v0'
+LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA: Final[str] = 'loopx_local_coordination_promotion_request_v0'
+LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA: Final[str] = 'loopx_local_coordination_promotion_result_v0'
+LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA: Final[str] = 'loopx_local_coordination_promotion_receipt_v0'

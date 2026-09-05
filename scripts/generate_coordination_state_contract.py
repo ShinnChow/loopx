@@ -122,9 +122,9 @@ def load_contract() -> dict[str, Any]:
 
 def render_python(contract: dict[str, Any]) -> str:
     literal = pformat(contract, width=88, sort_dicts=False)
+    protocol = contract["local_authority_protocol"]
     constants = "\n".join(
-        f"LOCAL_COORDINATION_{key.upper()}: Final = "
-        f"COORDINATION_STATE_CONTRACT['local_authority_protocol']['{key}']"
+        f"LOCAL_COORDINATION_{key.upper()}: Final[str] = {protocol[key]!r}"
         for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
     )
     return (
