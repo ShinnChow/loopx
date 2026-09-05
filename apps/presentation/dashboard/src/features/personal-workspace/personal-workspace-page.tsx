@@ -1907,6 +1907,7 @@ export function PersonalWorkspacePage({
       )}
       sidebar={(
         <GoalSidebar
+          key={statusSourceControl?.activeSource.statusUrl ?? "/status.json"}
           attentionCount={managerNeedsYouCount}
           goals={workspaceGoals}
           goalArchiveLoadState={goalArchiveLoadState}
