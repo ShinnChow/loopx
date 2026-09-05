@@ -22,7 +22,10 @@ CONTRACT_PATH = (
 PYTHON_PATH = CONTRACT_PATH.with_name("coordination_state_contract_generated.py")
 TYPESCRIPT_PATH = CONTRACT_PATH.with_name("coordination_state_contract.generated.ts")
 
-EXPECTED_TOP_LEVEL_KEYS = {"schema_version", "todo_read_record", "compatibility"}
+EXPECTED_TOP_LEVEL_KEYS = {
+    "schema_version", "todo_read_record", "todo_domain_record",
+    "todo_projection_metadata", "compatibility",
+}
 EXPECTED_TODO_KEYS = {
     "schema_version",
     "item_schema_version",
@@ -72,6 +75,26 @@ def load_contract() -> dict[str, Any]:
         )
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
+    projection = raw["todo_projection_metadata"]
+    if not isinstance(projection, dict) or set(projection) != {"fields", "required_fields"}:
+        raise ValueError("Todo projection contract has unexpected fields")
+    projection_fields = _string_list(projection["fields"], label="projection.fields")
+    projection_required = _string_list(projection["required_fields"], label="projection.required_fields")
+    if not set(projection_required) <= set(projection_fields) <= set(fields):
+        raise ValueError("Todo projection fields are not declared")
+    domain = raw["todo_domain_record"]
+    if not isinstance(domain, dict) or set(domain) != {
+        "schema_version", "item_schema_version", "fields_from", "exclude_fields_from", "required_fields",
+    }:
+        raise ValueError("Todo domain contract has unexpected fields")
+    if domain["fields_from"] != "todo_read_record" or domain["exclude_fields_from"] != "todo_projection_metadata":
+        raise ValueError("Todo domain field sources are invalid")
+    for field in ("schema_version", "item_schema_version"):
+        if not isinstance(domain[field], str) or not domain[field]:
+            raise ValueError("Todo domain schema versions must be non-empty strings")
+    domain_required = _string_list(domain["required_fields"], label="domain.required_fields")
+    if not set(domain_required) <= set(fields) - set(projection_fields):
+        raise ValueError("Todo domain required fields are not declared")
     return raw
 
 
@@ -80,8 +103,15 @@ def render_python(contract: dict[str, Any]) -> str:
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
-        "from typing import Final\n\n"
-        f"COORDINATION_STATE_CONTRACT: Final = {literal}\n"
+        "from types import MappingProxyType\n"
+        "from typing import Any, Final\n\n"
+        "def _freeze(value: Any) -> Any:\n"
+        "    if isinstance(value, dict):\n"
+        "        return MappingProxyType({key: _freeze(item) for key, item in value.items()})\n"
+        "    if isinstance(value, list):\n"
+        "        return tuple(_freeze(item) for item in value)\n"
+        "    return value\n\n"
+        f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
     )
 
 
@@ -89,7 +119,14 @@ def render_typescript(contract: dict[str, Any]) -> str:
     literal = json.dumps(contract, indent=2, ensure_ascii=False)
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
-        f"export const COORDINATION_STATE_CONTRACT = {literal} as const;\n"
+        "function deepFreeze<T>(value: T): T {\n"
+        "  if (value !== null && typeof value === 'object') {\n"
+        "    for (const child of Object.values(value)) deepFreeze(child);\n"
+        "    Object.freeze(value);\n"
+        "  }\n"
+        "  return value;\n"
+        "}\n\n"
+        f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
     )
 
 

@@ -21,7 +21,7 @@ if COORDINATION_STATE_CONTRACT.get("schema_version") != (
 
 
 _TODO_READ_RECORD = COORDINATION_STATE_CONTRACT.get("todo_read_record")
-if not isinstance(_TODO_READ_RECORD, dict):
+if not isinstance(_TODO_READ_RECORD, Mapping):
     raise CoordinationStateContractError("Todo record contract must be an object")
 
 TODO_CANONICAL_READ_RECORD_SCHEMA_VERSION = _TODO_READ_RECORD.get("schema_version")
@@ -43,18 +43,14 @@ if (
     or _DOMAIN.get("exclude_fields_from") != "todo_projection_metadata"
 ):
     raise CoordinationStateContractError("Todo domain contract mismatch")
-TODO_PROJECTION_METADATA_FIELDS = _string_tuple(
-    _PROJECTION.get("fields"), label="todo_projection_metadata.fields"
-)
+TODO_PROJECTION_METADATA_FIELDS = tuple(_PROJECTION["fields"])
 TODO_DOMAIN_READ_RECORD_SCHEMA_VERSION: str = _DOMAIN["schema_version"]
 TODO_DOMAIN_ITEM_SCHEMA_VERSION: str = _DOMAIN["item_schema_version"]
 TODO_DOMAIN_RECORD_FIELDS = tuple(
     field for field in TODO_CANONICAL_READ_RECORD_FIELDS
     if field not in TODO_PROJECTION_METADATA_FIELDS
 )
-TODO_DOMAIN_REQUIRED_FIELDS = _string_tuple(
-    _DOMAIN.get("required_fields"), label="todo_domain_record.required_fields"
-)
+TODO_DOMAIN_REQUIRED_FIELDS = tuple(_DOMAIN["required_fields"])
 if not set(TODO_DOMAIN_REQUIRED_FIELDS) <= set(TODO_DOMAIN_RECORD_FIELDS):
     raise CoordinationStateContractError("Todo domain required fields are not declared")
 

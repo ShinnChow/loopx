@@ -33,11 +33,11 @@ export const TODO_DOMAIN_READ_RECORD_SCHEMA =
   COORDINATION_STATE_CONTRACT.todo_domain_record.schema_version;
 export const TODO_DOMAIN_ITEM_SCHEMA =
   COORDINATION_STATE_CONTRACT.todo_domain_record.item_schema_version;
-export const TODO_DOMAIN_RECORD_CONTRACT = recordContract({
-  fields: TODO_CANONICAL_READ_RECORD_FIELDS.filter((field) =>
-    !COORDINATION_STATE_CONTRACT.todo_projection_metadata.fields.includes(field)),
+export const TODO_DOMAIN_RECORD_CONTRACT: RecordContract = Object.freeze({
+  fields: Object.freeze(TODO_CANONICAL_READ_RECORD_FIELDS.filter((field) =>
+    !(COORDINATION_STATE_CONTRACT.todo_projection_metadata.fields as readonly string[]).includes(field))),
   required_fields: COORDINATION_STATE_CONTRACT.todo_domain_record.required_fields,
-}, "todo_domain_record");
+});
 
 export interface TodoDomainRecord extends JsonObject {
   schema_version: string;

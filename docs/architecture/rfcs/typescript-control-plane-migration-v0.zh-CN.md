@@ -15,6 +15,11 @@
 
 ## 当前实现检查点
 
+受检入的 generator 校验语言中立 contract，并生成深度不可变的 Python/TypeScript
+binding，覆盖原生 domain 与 projection section。两端 runtime 直接 import 生成物；
+CI 检查源数据一致性并拒绝陈旧生成物。这删除了重复 contract loader，但不改变
+Todo 语义或 promotion policy。
+
 coordination 路径使用同一份语言中立的 `coordination_state_contract_v0.json`。
 原生 `TodoDomainRecord` 持有任务语义，包括 `archive_state`；
 `TodoProjectionMetadata` 包含 `source_section` 和可选 `index`。TypeScript reducer

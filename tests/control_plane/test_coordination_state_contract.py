@@ -39,7 +39,21 @@ def test_python_binding_equals_language_neutral_contract() -> None:
         COORDINATION_STATE_CONTRACT,
     )
 
-    assert COORDINATION_STATE_CONTRACT == raw
+    assert json.loads(json.dumps(COORDINATION_STATE_CONTRACT, default=dict)) == raw
+
+
+def test_generated_contract_is_deeply_immutable() -> None:
+    from loopx.control_plane.coordination.coordination_state_contract import (
+        COORDINATION_STATE_CONTRACT,
+    )
+
+    with pytest.raises(TypeError):
+        COORDINATION_STATE_CONTRACT["schema_version"] = "mutated"
+    with pytest.raises(TypeError):
+        COORDINATION_STATE_CONTRACT["todo_read_record"]["fields"] = ("mutated",)
+    with pytest.raises(TypeError):
+        COORDINATION_STATE_CONTRACT["todo_read_record"]["fields"][0] = "mutated"
+    assert "archive_state" in TODO_DOMAIN_RECORD_FIELDS
 
 
 def test_required_fields_are_declared_by_the_record_contract() -> None:

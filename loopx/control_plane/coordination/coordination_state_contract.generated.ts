@@ -1,6 +1,14 @@
 // Generated from coordination_state_contract_v0.json; do not edit.
 
-export const COORDINATION_STATE_CONTRACT = {
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === 'object') {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export const COORDINATION_STATE_CONTRACT = deepFreeze({
   "schema_version": "loopx_coordination_state_contract_v0",
   "todo_read_record": {
     "schema_version": "loopx_todo_canonical_read_record_v0",
@@ -83,9 +91,33 @@ export const COORDINATION_STATE_CONTRACT = {
       "source_section"
     ]
   },
+  "todo_domain_record": {
+    "schema_version": "loopx_todo_domain_read_record_v0",
+    "item_schema_version": "todo_domain_record_v0",
+    "fields_from": "todo_read_record",
+    "exclude_fields_from": "todo_projection_metadata",
+    "required_fields": [
+      "schema_version",
+      "todo_id",
+      "role",
+      "status",
+      "done",
+      "text",
+      "archive_state"
+    ]
+  },
+  "todo_projection_metadata": {
+    "fields": [
+      "source_section",
+      "index"
+    ],
+    "required_fields": [
+      "source_section"
+    ]
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
     "markdown_role": "human_workbench_and_compatibility_projection"
   }
-} as const;
+} as const);

@@ -32,7 +32,7 @@ function pythonContract(): Promise<Record<string, unknown>> {
     const child = spawn("python3", ["-c", [
       "import json",
       "from loopx.control_plane.coordination.coordination_state_contract import COORDINATION_STATE_CONTRACT",
-      "print(json.dumps(COORDINATION_STATE_CONTRACT, sort_keys=True, separators=(',', ':')))",
+      "print(json.dumps(COORDINATION_STATE_CONTRACT, default=dict, sort_keys=True, separators=(',', ':')))",
     ].join("; ")], { cwd: process.cwd() });
     let stdout = "";
     let stderr = "";
@@ -72,6 +72,20 @@ test("generated coordination bindings are current", async () => {
 });
 
 test("provider-bound Todo records preserve every declared field", () => {
+  assert.deepEqual(canonicalCoordinationTodoRecord(TODO), TODO);
+});
+
+test("generated and derived contracts are deeply immutable at runtime", () => {
+  function verify(value: unknown): void {
+    if (value === null || typeof value !== "object") return;
+    assert.ok(Object.isFrozen(value));
+    for (const child of Object.values(value)) verify(child);
+    assert.throws(() => Object.assign(value, {injected: true}), TypeError);
+  }
+  verify(COORDINATION_STATE_CONTRACT);
+  verify(TODO_DOMAIN_RECORD_CONTRACT);
+  assert.equal(Reflect.set(COORDINATION_STATE_CONTRACT.todo_read_record.fields,
+    "0", "mutated"), false);
   assert.deepEqual(canonicalCoordinationTodoRecord(TODO), TODO);
 });
 

@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Final
+from types import MappingProxyType
+from typing import Any, Final
 
-COORDINATION_STATE_CONTRACT: Final = {'schema_version': 'loopx_coordination_state_contract_v0',
+def _freeze(value: Any) -> Any:
+    if isinstance(value, dict):
+        return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return tuple(_freeze(item) for item in value)
+    return value
+
+COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordination_state_contract_v0',
  'todo_read_record': {'schema_version': 'loopx_todo_canonical_read_record_v0',
                       'item_schema_version': 'todo_item_v0',
                       'fields': ['index',
@@ -80,6 +88,19 @@ COORDINATION_STATE_CONTRACT: Final = {'schema_version': 'loopx_coordination_stat
                                           'text',
                                           'archive_state',
                                           'source_section']},
+ 'todo_domain_record': {'schema_version': 'loopx_todo_domain_read_record_v0',
+                        'item_schema_version': 'todo_domain_record_v0',
+                        'fields_from': 'todo_read_record',
+                        'exclude_fields_from': 'todo_projection_metadata',
+                        'required_fields': ['schema_version',
+                                            'todo_id',
+                                            'role',
+                                            'status',
+                                            'done',
+                                            'text',
+                                            'archive_state']},
+ 'todo_projection_metadata': {'fields': ['source_section', 'index'],
+                              'required_fields': ['source_section']},
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
-                   'markdown_role': 'human_workbench_and_compatibility_projection'}}
+                   'markdown_role': 'human_workbench_and_compatibility_projection'}})
