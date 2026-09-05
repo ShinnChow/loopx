@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { decodeGoalOrder, goalOrderStorageKey, moveGoal, orderedGoals } from "./goal-order.ts";
+import { decodeGoalOrder, goalOrderStorageKey, moveGoal, orderedGoals } from "../../../node_modules/.cache/loopx-goal-order/goal-order.js";
 
 assert.deepEqual(decodeGoalOrder('{'), []);
 assert.deepEqual(decodeGoalOrder('["a", 1]'), []);
