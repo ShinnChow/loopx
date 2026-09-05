@@ -921,7 +921,7 @@ def assert_connected_delivery_surface_loop(payload: dict, markdown: str) -> None
     assert "outcome_gap_streak=3" in quota_markdown, quota_markdown
 
 
-def assert_delivery_batch_scale_prefers_test_named_runs() -> None:
+def assert_delivery_semantics_require_structured_fields() -> None:
     assert (
         delivery_batch_scale_for_run(
             {
@@ -935,19 +935,19 @@ def assert_delivery_batch_scale_prefers_test_named_runs() -> None:
         delivery_batch_scale_for_run(
             {"classification": "side_bypass_validation_plan_source_shape_consumer_test"}
         )
-        == "test_only"
+        == "unknown"
     )
     assert (
         delivery_batch_scale_for_run({"classification": "owner_handoff_consumer_test"})
-        == "test_only"
+        == "unknown"
     )
     assert (
         delivery_batch_scale_for_run({"classification": "delivery_ranker_readiness_batch"})
-        == "multi_surface"
+        == "unknown"
     )
     assert (
         delivery_batch_scale_for_run({"classification": "feedback_reranker_adapter_slice"})
-        == "implementation"
+        == "unknown"
     )
     profile = {
         "outcome_floor": {
@@ -961,21 +961,21 @@ def assert_delivery_batch_scale_prefers_test_named_runs() -> None:
             {"classification": "side_bypass_owner_drop_landing_forecast_implementation"},
             profile,
         )
-        == "surface_only"
+        == "unknown"
     )
     assert (
         delivery_outcome_for_run(
             {"classification": "side_bypass_ranker_fit_metric_implementation"},
             profile,
         )
-        == "outcome_progress"
+        == "unknown"
     )
     assert (
         delivery_outcome_for_run(
             {"classification": "side_bypass_macro_evidence_segment_implementation"},
             profile,
         )
-        == "outcome_progress"
+        == "unknown"
     )
     assert (
         delivery_outcome_for_run(
@@ -1335,7 +1335,7 @@ def main() -> int:
     assert_dependency_blockers_stay_separate(dependency_payload, dependency_markdown)
     assert_connected_delivery_no_baseline_small_streak(small_streak_payload, small_streak_markdown)
     assert_connected_delivery_surface_loop(surface_loop_payload, surface_loop_markdown)
-    assert_delivery_batch_scale_prefers_test_named_runs()
+    assert_delivery_semantics_require_structured_fields()
     assert_project_asset_secret_scanner_boundaries()
     assert_promotion_readiness_full_scan_fallback()
     assert_promotion_readiness_warning_in_quota_guard()
