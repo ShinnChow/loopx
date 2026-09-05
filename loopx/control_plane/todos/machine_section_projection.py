@@ -20,8 +20,8 @@ from ..coordination.coordination_state_contract import (
     TODO_CANONICAL_REQUIRED_READ_FIELDS,
     canonical_record_fields,
 )
-from ..goals.active_state_metadata import todo_role_for_heading
 from .active_state_editing import TODO_SECTION_HEADINGS
+from .machine_region import find_todo_regions, todo_region_marker
 from .active_state_todo_parser import parse_active_state_todos
 from .contract import (
     TODO_METADATA_FIELDS,
@@ -34,12 +34,11 @@ from .todo_summary import canonical_todo_read_record
 
 
 TODO_SECTION_PROJECTION_SCHEMA_VERSION = "loopx_todo_section_projection_v0"
-_HEADING_PATTERN = re.compile(r"(?m)^##\s+(.+?)\s*(?:\r?\n|$)")
 _MARKER_PATTERN = re.compile(
     r"(?m)^<!-- loopx:todo-section-projection-v0 "
     r"role=(?P<role>user|agent) "
     r"provider_revision=(?P<revision>[A-Za-z0-9_.:-]+) "
-    r"records_sha256=(?P<digest>[a-f0-9]{64}) -->$"
+    r"records_sha256=(?P<digest>[a-f0-9]{64}) -->\r?$"
 )
 
 
@@ -110,18 +109,17 @@ def _record_sort_key(record: Mapping[str, object]) -> tuple[int, str]:
 
 
 def _section_spans(markdown: str) -> dict[str, _SectionSpan]:
-    headings = list(_HEADING_PATTERN.finditer(markdown))
+    lines = markdown.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
     spans: dict[str, _SectionSpan] = {}
-    for index, heading in enumerate(headings):
-        role = todo_role_for_heading(heading.group(1))
-        if role is None:
-            continue
-        if role in spans:
+    for region in find_todo_regions(lines):
+        if region.role in spans:
             raise TodoSectionProjectionError(
-                f"active Markdown contains multiple {role} Todo sections"
+                f"active Markdown contains multiple {region.role} Todo sections"
             )
-        end = headings[index + 1].start() if index + 1 < len(headings) else len(markdown)
-        spans[role] = _SectionSpan(role=role, start=heading.start(), end=end)
+        spans[region.role] = _SectionSpan(region.role, offsets[region.start], offsets[region.end])
     return spans
 
 
@@ -165,12 +163,14 @@ def _render_section(
     digest = _sha256_text(_canonical_json(records))
     lines = [
         f"## {TODO_SECTION_HEADINGS[role]}",
+        todo_region_marker(role, "begin"),
         f"<!-- loopx:todo-section-projection-v0 role={role} "
         f"provider_revision={provider_revision} records_sha256={digest} -->",
         "",
     ]
     for record in records:
         lines.extend(_render_record(record))
+    lines.append(todo_region_marker(role, "end"))
     lines.append("")
     return newline.join(lines), digest
 
@@ -281,7 +281,8 @@ def render_canonical_todo_sections(
     expected = _parity_records(
         [*by_role["user"], *by_role["agent"]]
     )
-    actual = _parity_records(_parsed_active_records(rendered))
+    # Validate the generated payload, independently of unrelated document text.
+    actual = _parity_records(_parsed_active_records("\n".join(rendered_sections.values())))
     if _canonical_json(actual) != _canonical_json(expected):
         raise TodoSectionProjectionError("Todo section parse/render parity mismatch")
     second = _replace_existing_sections(rendered, rendered_sections=rendered_sections)

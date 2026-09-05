@@ -151,6 +151,22 @@ The projection command has four safety properties:
 - it parses the rendered sections back and requires deterministic parity and
   idempotent second rendering before an `--execute` write.
 
+The writer imports the legacy LoopX-generated H2/list/metadata layout. It stops
+at the first non-generated line, rather than extending replacement to the next
+H2 or EOF; following H1, Setext, indented headings and ordinary narrative remain
+outside its ownership. Code fences and multiline comments are not Todo headers.
+The projection then emits paired `loopx:todo-region-v0` begin/end markers under
+each Todo heading. The renderer, active Todo reader and section editor share
+that boundary contract. Future projections use those explicit bounds; orphan,
+nested, mismatched or missing markers, and non-generated content inside a marked
+region, fail closed. No ordinary Goal is rewritten or opted in by installation.
+Legacy unmarked readers and bootstrap output remain unchanged.
+
+Narrative byte preservation and canonical Todo parse/render parity are separate
+checks: the former compares untouched source slices, while the latter reads only
+the generated regions. Neither marker is provider authority or a current-head
+freshness guarantee.
+
 Each section includes a compact `loopx:todo-section-projection-v0` marker with
 the canonical provider revision and a SHA-256 digest of the complete canonical
 records for that role. The marker is lineage evidence, not a write API.

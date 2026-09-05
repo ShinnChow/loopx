@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import stat
+import hashlib
+import json
+import subprocess
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -12,6 +17,9 @@ from loopx.control_plane.todos.machine_section_projection import (
 )
 from loopx.cli import build_parser
 from loopx.cli_commands import todo as todo_command
+from loopx.control_plane.coordination.local_authority import read_canonical_todos_if_promoted
+from loopx.control_plane.coordination.runtime_shadow import build_todo_runtime_shadow_projection
+from loopx.control_plane.effect_runtime import effect_runtime_result
 
 
 SOURCE = """---
@@ -84,9 +92,10 @@ def _records() -> list[dict[str, object]]:
     ]
 
 
-def test_projection_replaces_only_machine_sections_and_is_idempotent() -> None:
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_projection_replaces_only_machine_sections_and_is_idempotent(newline: str) -> None:
     projected = render_canonical_todo_sections(
-        SOURCE,
+        SOURCE.replace("\n", newline),
         _records(),
         provider_revision="sha256:abc123",
     )
@@ -353,12 +362,20 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
     assert parent_syncs == [state_path]
 
 
-def test_project_markdown_cli_preserves_crlf_narrative_bytes(
+@pytest.mark.parametrize(
+    "heading",
+    ["## Next Action", "# Next Action", "Next Action\n===========",
+     "Next Action\n-----------", "   # Next Action", "  ## Next Action"],
+)
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_project_markdown_cli_preserves_narrative_boundaries(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
+    heading: str,
+    newline: str,
 ) -> None:
     state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
-    source_bytes = SOURCE.replace("\n", "\r\n").encode("utf-8")
+    source_bytes = SOURCE.replace("## Next Action", heading).replace("\n", newline).encode("utf-8")
     state_path.write_bytes(source_bytes)
     monkeypatch.setattr(
         todo_command,
@@ -380,6 +397,7 @@ def test_project_markdown_cli_preserves_crlf_narrative_bytes(
         lambda **_kwargs: (tmp_path, state_path),
     )
 
+    captured: dict[str, object] = {}
     result = todo_command.handle_todo_command(
         build_parser().parse_args(
             [
@@ -394,14 +412,108 @@ def test_project_markdown_cli_preserves_crlf_narrative_bytes(
         ),
         registry_path=tmp_path / "registry.json",
         runtime_root_arg=None,
-        print_payload=lambda *_args: None,
+        print_payload=lambda value, *_args: captured.update(value),
         append_cli_rollout_event=lambda *_args, **_kwargs: None,
     )
 
-    assert result == 0
     projected = state_path.read_bytes()
-    assert b"\r\n" in projected
-    assert b"Human rationale stays here.\r\n" in projected
-    assert b"Do not rewrite this paragraph.\r\n" in projected
-    assert b"Continue the approved migration.\r\n" in projected
-    assert b"\n" not in projected.replace(b"\r\n", b"")
+    assert result == 0
+    assert captured["narrative_preserved"] is True
+    assert "Human rationale stays here.".encode() in projected
+    assert "Do not rewrite this paragraph.".encode() in projected
+    assert (heading.replace("\n", newline) + newline + newline + "- Continue the approved migration." + newline).encode() in projected
+    if newline == "\r\n":
+        assert b"\n" not in projected.replace(b"\r\n", b"")
+
+
+def test_real_promoted_provider_to_cli_projection(tmp_path: Path) -> None:
+    """Real file authority, TS bridge, CLI process and publication; no live Goal."""
+    runtime = tmp_path / "runtime"
+    state = tmp_path / "ACTIVE_GOAL_STATE.md"
+    source = SOURCE.replace("\n", "\r\n").encode()
+    state.write_bytes(source)
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({
+        "schema_version": 1,
+        "common_runtime_root": str(runtime),
+        "goals": [{"id": "goal-a", "status": "active", "repo": str(tmp_path),
+                   "state_file": state.name}],
+    }))
+
+    def run(revision: str, *extra: str) -> tuple[int, dict]:
+        process = subprocess.run(
+            [sys.executable, "-m", "loopx.cli", "--registry", str(registry),
+             "--runtime-root", str(runtime), "--format", "json", "todo",
+             "project-markdown", "--goal-id", "goal-a", "--provider-revision",
+             revision, *extra],
+            cwd=Path(__file__).resolve().parents[2],
+            capture_output=True, text=True, timeout=60, check=False,
+        )
+        return process.returncode, json.loads(process.stdout)
+
+    code, result = run("unpromoted", "--execute")
+    assert code == 1
+    assert "requires promoted canonical authority" in result["error"]
+    assert state.read_bytes() == source
+
+    projection = build_todo_runtime_shadow_projection(goal_id="goal-a", todos=_records())
+    digest = hashlib.sha256(json.dumps(
+        projection, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    common = {"runtime_root": str(runtime), "goal_id": "goal-a"}
+    for action in ("bootstrap", "commit"):
+        applied = effect_runtime_result(f"coordination.runtime_shadow.{action}", {
+            **common,
+            "schema_version": f"loopx_coordination_runtime_shadow_{action}_v0",
+            "operation_id": f"projection-{action}", "source_version": f"source-{action}",
+            "projection": projection,
+            **({"event_kind": "todo_update"} if action == "commit" else {}),
+        })
+        assert applied["status"] == "applied"
+    revision = applied["provider_revision"]
+    fence = {
+        "schema_version": "loopx_legacy_coordination_writer_fence_v0",
+        "state": "engaged", "goal_id": "goal-a", "fence_id": "projection-fence",
+        "source_version": "source-commit", "source_projection_sha256": digest,
+        "expected_shadow_provider_revision": revision,
+    }
+    engaged = effect_runtime_result("coordination.local_authority.legacy_writer_fence.engage", {
+        **common, "schema_version": "loopx_legacy_coordination_writer_fence_engage_request_v0",
+        "fence": fence,
+    })
+    assert engaged["status"] == "applied"
+    promoted = effect_runtime_result("coordination.local_authority.promote", {
+        **common, "schema_version": "loopx_local_coordination_promotion_request_v0",
+        "operation_id": "projection-promote", "expected_shadow_provider_revision": revision,
+        "expected_shadow_projection_sha256": digest, "minimum_operations": 1,
+        "required_event_kinds": ["todo_update"], "writer_fence": fence,
+    })
+    assert promoted["status"] == "applied"
+    before = read_canonical_todos_if_promoted(runtime_root=runtime, goal_id="goal-a")
+    revision = before["provider_revision"]
+    code, preview = run(revision)
+    assert code == 0 and preview["dry_run"] is True
+    assert state.read_bytes() == source
+    code, mismatch = run("stale-revision", "--execute")
+    assert code == 1 and "does not match" in mismatch["error"]
+    assert state.read_bytes() == source
+
+    for heading in ("# Next Action", "Next Action\n===========", "Next Action\n-----------"):
+        variant = SOURCE.replace("## Next Action", heading).replace("\n", "\r\n").encode()
+        state.write_bytes(variant)
+        code, preserved = run(revision, "--execute")
+        assert code == 0 and preserved["narrative_preserved"] is True
+        suffix = (heading + "\n\n- Continue the approved migration.\n").replace("\n", "\r\n").encode()
+        assert state.read_bytes().endswith(suffix)
+
+    state.write_bytes(source)
+    code, written = run(revision, "--execute")
+    assert code == 0 and written["changed"] is True
+    published = state.read_bytes()
+    assert b"todo_agent" in published and b"todo_user" in published
+    assert published.endswith(b"## Next Action\r\n\r\n- Continue the approved migration.\r\n")
+    assert b"\n" not in published.replace(b"\r\n", b"")
+    code, replay = run(revision, "--execute")
+    assert code == 0 and replay["changed"] is False
+    assert state.read_bytes() == published
+    assert read_canonical_todos_if_promoted(runtime_root=runtime, goal_id="goal-a") == before
