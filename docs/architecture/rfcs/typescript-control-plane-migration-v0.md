@@ -67,6 +67,59 @@ or passing accelerated volume tests is not ten-day continuity evidence.
 Local promotion waits for both volume and elapsed-time qualification; it does
 not wait for a PostgreSQL service and never expires receipts at day ten.
 
+### Delivery semantics: correctness before migration
+
+The delivery-history boundary now treats `classification`, `health_check`, and
+`recommended_action` as narrative. They cannot create or discharge a
+follow-through obligation, prove an outcome, or classify delivery scale.
+For example, `unblocked after dependency update` is not a blocker receipt and
+`implemented network protocol parser` is not preparation-only evidence.
+
+The owning modules remain `control_plane/work_items/delivery_outcome.py`,
+`delivery_signals.py`, and `outcome_followthrough.py`. This is a correctness
+prerequisite inside the existing owner, not a new capability/provider or a
+completed TypeScript transaction migration. It deletes keyword inference and
+its status constants without adding a runtime crossing, schema, or service.
+The existing typed blocker-settlement predicate is reused rather than copied.
+
+The acceptance invariant is **narrative non-interference**: holding typed
+fields and configuration fixed, rewriting narrative or adding an unvalidated
+`compact_evidence` / `case_result` object cannot change delivery semantics or
+its follow-through obligation. Classification remains visible as a history
+label; no legacy prediction is retained without a concrete display consumer.
+
+- Valid explicit outcome, turn-kind, and scale fields retain their meanings.
+  An explicit blocker kind remains readable. A scoped typed blocked observation
+  must pass the existing work-item/evidence binding before it resolves a gap
+  into blocker writeback. A bare `outcome_gap` is insufficient.
+- Missing or unsupported historical delivery fields remain unknown; unknown
+  stops consecutive small-scale/outcome-gap evidence streaks and never counts
+  as success or as an inferred failure. Missing outcome with no configured
+  floor retains the `not_configured` presentation sentinel.
+- New delivery claims use explicit enums through the existing writer APIs
+  (for example `refresh-state --delivery-outcome ... --delivery-batch-scale ...`).
+  State-only refresh remains legal without a delivery claim; this patch does
+  not require every status refresh to declare progress. Existing write-time
+  enum rejection, settlement evidence, quota, and gate checks remain in force.
+- Legacy outcome-marker/hint configuration remains readable and preserves
+  whether an outcome floor is configured. Its words no longer classify runs.
+  No persisted history is rewritten and no new default-off flag restores the
+  erroneous behavior. This intentionally changes status, handoff/review, and
+  quota decisions previously derived from untyped historical labels.
+
+Within this delivery domain, the migration unit is the complete
+delivery-history-to-obligation projection, including scale/outcome streaks and
+its status/quota consumers. This defines the slice boundary without displacing
+the provider-first Todo sequence below.
+It must cross at most once per bounded history batch, delete the replaced
+Python decision path, preserve independently reviewed typed cases, and retain
+narrative-mutation regressions through the real CLI. Transport-only golden
+parity is insufficient because the old inference was incorrect. Separately
+inventory writers still omitting material-result fields and retire obsolete
+marker/hint configuration with an explicit compatibility plan. Exact legacy
+lifecycle classification codes and unrelated cadence policies are outside this
+slice; they must not be reported as migrated or globally free of prose rules.
+
 ### Next delivery sequence
 
 1. **One provider-first Todo transaction family.** Route native create, claim,
