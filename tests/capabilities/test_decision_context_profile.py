@@ -240,11 +240,15 @@ def test_runtime_provider_binding_must_be_declared_by_private_profile(
 @pytest.mark.parametrize(
     ("field_name", "value", "expected_message"),
     [
-        ("automatic_capture", True, "automatic capture must stay disabled"),
+        (
+            "automatic_capture",
+            True,
+            "automatic capture requires an explicit source_ids allowlist",
+        ),
         ("fail_open", False, "providers must fail open"),
     ],
 )
-def test_profile_rejects_unsafe_automation_modes(
+def test_profile_rejects_unscoped_capture_and_fail_closed_providers(
     tmp_path: Path,
     field_name: str,
     value: bool,

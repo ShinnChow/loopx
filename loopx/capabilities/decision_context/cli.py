@@ -74,6 +74,24 @@ def register_decision_context_commands(
         help="Inspect the provider-neutral decision evidence and outcome contract.",
     )
     commands = parser.add_subparsers(dest="decision_context_command", required=True)
+    for name in ("capture", "capture-status", "prepare-captured"):
+        capture = commands.add_parser(
+            name, help="Operate the opt-in private source-reference spool."
+        )
+        add_subcommand_format(capture)
+        capture.add_argument("--goal-id", required=True)
+        capture.add_argument("--agent-id", required=True)
+        capture.add_argument("--profile", required=True)
+        capture.add_argument("--spool", required=True)
+        capture.add_argument("--cursor-state")
+        if name == "capture":
+            capture.add_argument("--execute", action="store_true")
+        if name == "prepare-captured":
+            capture.add_argument("--batch-id", type=int, required=True)
+            capture.add_argument("--decision-id", required=True)
+            capture.add_argument("--rebase-json", required=True)
+            capture.add_argument("--pending-settlement", required=True)
+            capture.add_argument("--execute", action="store_true")
     architecture = commands.add_parser(
         "architecture",
         help="Render the default-off Stage-0 Decision Context contract.",
@@ -199,7 +217,47 @@ def handle_decision_context_command(
 ) -> int | None:
     if args.command != "decision-context":
         return None
-    if args.decision_context_command == "architecture":
+    if args.decision_context_command in {
+        "capture",
+        "capture-status",
+        "prepare-captured",
+    }:
+        from .capture import (
+            capture_profile_sources,
+            assemble_captured_decision_evidence,
+        )
+
+        capture_args = dict(
+            goal_id=args.goal_id,
+            agent_id=args.agent_id,
+            profile_path=Path(args.profile),
+            spool_path=Path(args.spool),
+            cursor_path=Path(args.cursor_state) if args.cursor_state else None,
+        )
+        if args.decision_context_command == "prepare-captured":
+            records = decision_evidence_records_from_mapping(
+                _load_json_mapping(args.rebase_json, label="rebase JSON")
+            )
+            assembly = assemble_captured_decision_evidence(
+                **capture_args,
+                batch_id=args.batch_id,
+                decision_id=args.decision_id,
+                rebase=lambda _collection: records,
+            )
+            if args.execute:
+                write_private_pending_decision_settlement(
+                    Path(args.pending_settlement), assembly
+                )
+            payload = {
+                "assembly": assembly.public_packet(),
+                "pending_settlement_written": args.execute,
+                "cursor_state_mutated": False,
+            }
+        else:
+            payload = capture_profile_sources(
+                **capture_args, execute=bool(getattr(args, "execute", False))
+            )
+    elif args.decision_context_command == "architecture":
         payload = build_decision_context_architecture_packet()
     elif args.decision_context_command in {"prepare-evidence", "prepare-review"}:
         now = datetime.now(timezone.utc).isoformat()
@@ -233,9 +291,7 @@ def handle_decision_context_command(
             rebase=lambda _collection: records,
             timeout_seconds=getattr(args, "timeout_seconds", None),
         )
-        settlement_required = bool(
-            assembly is not None and assembly.proposed_cursors
-        )
+        settlement_required = bool(assembly is not None and assembly.proposed_cursors)
         pending_written = False
         if prepare_review and settlement_required and bool(args.execute):
             write_private_pending_decision_settlement(

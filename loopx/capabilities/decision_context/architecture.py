@@ -72,6 +72,7 @@ def build_decision_context_architecture_packet() -> dict[str, object]:
             "accepted_recalled_claims_require_exact_read_and_revision",
             "changed_facts_require_exact_read_authority_revisions",
             "incremental_cursors_advance_only_after_rebase_and_writeback",
+            "capture_spool_cursors_are_not_reviewed_source_cursors",
             "cursor_commit_exact_reads_a_matching_lifecycle_event",
             "raw_provider_content_never_enters_public_packets",
             "proposals_require_existing_authority_confirmation",

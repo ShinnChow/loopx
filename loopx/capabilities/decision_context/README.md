@@ -75,7 +75,7 @@ Decision Context does not:
 
 - replace LoopX Core todo, gate, quota, event, or authority semantics;
 - turn provider recall into trusted truth;
-- automatically capture chats, tool output, credentials, or raw provider
+- automatically persist chat bodies, tool output, credentials, or raw provider
   payloads;
 - grant permission to execute a recommendation;
 - automatically activate a Reward Memory candidate;
@@ -204,6 +204,78 @@ or other irreversible authority. Removing the private profile disables the
 route; removing the pending checkpoint abandons an unsettled review without
 changing active cursors.
 
+### Opt-in Source-Reference Capture
+
+Automatic capture is **default off**. Earlier profiles rejected every
+`automatic_capture=true`; it now means explicitly allowlisted **reference
+capture**, not automatic semantic review, raw-content archiving, or memory sync.
+Add these fields to an existing private profile's `automation` object:
+
+```json
+{
+  "automatic_capture": true,
+  "fail_open": true,
+  "source_ids": ["source:authority:baseline"],
+  "interval_seconds": 900,
+  "max_pending_batches": 1000
+}
+```
+
+Every listed source must already be enabled, incremental, and exact-readable.
+On-demand sources are never enrolled implicitly. The same goal/agent activation
+checks apply. Preview does not call providers or create the spool:
+
+```bash
+loopx decision-context capture --goal-id <goal-id> --agent-id <agent-id> \
+  --profile <private-profile.json> --spool <private-capture.sqlite> \
+  --cursor-state <reviewed-cursors.json> --format json
+```
+
+Add `--execute` for one tick. Use `capture-status` with the same arguments
+and without `--execute` for readback. Configure a host scheduler to invoke the
+tick; the capability enforces `interval_seconds`, while the host owns process
+startup, an outer process timeout, and stop/uninstall. No model heartbeat is
+created. Private integrations use `capture_profile_sources` from
+`loopx.capabilities.decision_context.capture` with existing
+`source_provider_overrides`; generic queue/configuration rules remain here.
+
+The mode-0600 SQLite spool binds to one goal/agent and records bounded public-safe
+scan receipts plus **private replay cursors**. It contains no source bodies.
+Ticks are serialized; batch insertion and capture cursor advancement commit
+together. Failed scans keep their cursor, and capacity exhaustion reports
+`backpressure` without dropping pending batches. A changed source binding reports
+`binding_changed`, requiring an explicit rebase or a separately scoped new spool.
+Do not store the spool or its journal in a public repository.
+
+Consume each source's `next_batch_id` through a fresh bounded scan and exact read:
+
+```bash
+loopx decision-context prepare-captured --goal-id <goal-id> --agent-id <agent-id> \
+  --profile <private-profile.json> --spool <private-capture.sqlite> \
+  --cursor-state <reviewed-cursors.json> --batch-id <batch-id> \
+  --decision-id <decision-id> --rebase-json <private-rebase.json> \
+  --pending-settlement <private-pending.json> --execute --format json
+```
+
+A domain host can instead use `assemble_captured_decision_evidence` with a
+`rebase` callback to inspect transient exact content. Preparing evidence does
+not acknowledge a batch. Use the existing `settle-review` path above; a later
+capture tick retires only a prefix whose cursor already matches the supplied
+**settlement-owned reviewed cursor file**. Never substitute capture cursors for
+that file or manually manufacture reviewed cursors.
+
+This is a change-reference spool, **not a lossless source archive**. First-scan
+history, pagination, late edits, deletion visibility and deadlines remain provider
+contracts. Providers must support deterministic bounded replay; an unavailable
+captured revision raises a hold rather than reviewing substituted content. Use
+an explicit current-source rebase and ordinary reviewed settlement when historical
+replay is impossible. Capture health is not proof of complete decision coverage.
+
+To stop collection, set `automatic_capture=false` and unload the host scheduler.
+Existing reviewable batches remain private and can still be prepared. To roll
+back to an older release, also remove the three new automation fields; retain
+the spool as a private checkpoint rather than deleting unreviewed work.
+
 ## Relationship To Other Capabilities
 
 | Capability | Primary question | Relationship |
@@ -218,7 +290,8 @@ changing active cursors.
 The public capability currently ships its packet contracts, default-off
 activation profile, provider-neutral source contract, bounded evidence
 assembly, public-safe projections, owner-gated or quiet review settlement,
-private cursor commit, and later validated outcome feedback.
+private cursor commit, opt-in source-reference capture, and later validated
+outcome feedback.
 
 It is still marked **experimental**. A production integration must provide its
 own private source adapters, profile, authority policy, proposal logic, and
@@ -234,6 +307,7 @@ For implementation details and invariants, read the
 python3 examples/decision-context-contract-smoke.py
 python3 examples/decision-material-walkthrough-smoke.py
 python3 -m pytest -q tests/test_decision_context_material.py
+python3 -m pytest -q tests/capabilities/test_decision_context_capture.py
 ```
 
 The contract smoke covers Decision Context packet and architecture readback.
