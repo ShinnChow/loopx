@@ -300,6 +300,7 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
     state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
     state_path.write_text(SOURCE, encoding="utf-8")
     state_path.chmod(0o640)
+    original_mode = stat.S_IMODE(state_path.stat().st_mode)
     parent_syncs: list[object] = []
     monkeypatch.setattr(
         todo_command,
@@ -358,8 +359,32 @@ def test_project_markdown_cli_publishes_with_atomic_replace(
     assert target == state_path
     assert temporary != target
     assert "todo_agent" in state_path.read_text(encoding="utf-8")
-    assert stat.S_IMODE(state_path.stat().st_mode) == 0o640
+    assert stat.S_IMODE(state_path.stat().st_mode) == original_mode
     assert parent_syncs == [state_path]
+
+
+@pytest.mark.parametrize("operation", ["chmod", "fsync", "replace"])
+def test_atomic_projection_failure_preserves_original(monkeypatch, tmp_path, operation):
+    state_path = tmp_path / "ACTIVE_GOAL_STATE.md"
+    state_path.write_bytes(b"original\r\n")
+    opened = []
+    real_fdopen = todo_command.os.fdopen
+
+    def capture_handle(*args, **kwargs):
+        handle = real_fdopen(*args, **kwargs)
+        opened.append(handle)
+        return handle
+
+    def fail(*_args, **_kwargs):
+        raise OSError("injected pre-publication failure")
+
+    monkeypatch.setattr(todo_command.os, "fdopen", capture_handle)
+    monkeypatch.setattr(todo_command.os, operation, fail)
+    with pytest.raises(OSError, match="injected pre-publication failure"):
+        todo_command._atomic_write_text(state_path, "replacement\n")
+    assert state_path.read_bytes() == b"original\r\n"
+    assert opened and all(handle.closed for handle in opened)
+    assert list(tmp_path.iterdir()) == [state_path]
 
 
 @pytest.mark.parametrize(

@@ -59,7 +59,6 @@ def parse_active_state_todos(
         if index in region_ends:
             role = None
             current_todo = None
-            continue
         if line.startswith("## "):
             heading = line.lstrip("#").strip()
             normalized_heading = heading.strip().lower()

@@ -105,8 +105,8 @@ def _atomic_write_text(path: Path, text: str) -> None:
     )
     temporary_path = Path(temporary)
     try:
-        os.fchmod(descriptor, original_mode)
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+            os.chmod(temporary_path, original_mode)
             handle.write(text)
             handle.flush()
             os.fsync(handle.fileno())

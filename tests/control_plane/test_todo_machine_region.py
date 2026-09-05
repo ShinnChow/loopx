@@ -83,3 +83,14 @@ def test_section_editor_and_reader_share_generated_bounds() -> None:
     assert [item["text"] for item in parsed["agent_todos"]["items"]] == ["A generated Todo."]
     assert lines[end + 1:] == tail.splitlines()
     assert len(find_todo_regions(lines)) == 2
+
+
+def test_mixed_legacy_boundary_does_not_skip_next_heading() -> None:
+    source = "\n".join([
+        "## User Todo", "- [ ] User task.", "## Agent Todo",
+        todo_region_marker("agent", "begin"), "- [ ] Agent task.",
+        todo_region_marker("agent", "end"),
+    ])
+    parsed = parse_active_state_todos(source, item_limit=None)
+    assert [item["text"] for item in parsed["user_todos"]["items"]] == ["User task."]
+    assert [item["text"] for item in parsed["agent_todos"]["items"]] == ["Agent task."]
