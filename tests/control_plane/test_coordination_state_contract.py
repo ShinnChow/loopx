@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+import subprocess
+
 import pytest
 
 from loopx.control_plane.coordination.coordination_state_contract import (
@@ -11,6 +15,31 @@ from loopx.control_plane.coordination.coordination_state_contract import (
     TODO_DOMAIN_ITEM_SCHEMA_VERSION,
     TODO_PROJECTION_METADATA_FIELDS,
 )
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_generated_coordination_bindings_are_current() -> None:
+    subprocess.run(
+        ["python3", "scripts/generate_coordination_state_contract.py", "--check"],
+        cwd=ROOT,
+        check=True,
+    )
+
+
+def test_python_binding_equals_language_neutral_contract() -> None:
+    raw = json.loads(
+        (
+            ROOT
+            / "loopx/control_plane/coordination/coordination_state_contract_v0.json"
+        ).read_text(encoding="utf-8")
+    )
+    from loopx.control_plane.coordination.coordination_state_contract import (
+        COORDINATION_STATE_CONTRACT,
+    )
+
+    assert COORDINATION_STATE_CONTRACT == raw
 
 
 def test_required_fields_are_declared_by_the_record_contract() -> None:

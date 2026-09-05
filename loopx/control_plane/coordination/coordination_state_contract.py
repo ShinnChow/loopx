@@ -1,59 +1,25 @@
-"""Versioned coordination-state record contract shared with TypeScript.
-
-The JSON artifact is the language-neutral schema owner.  Python projection
-code may normalize Markdown into this shape, but it must not silently invent a
-different field allowlist or discard an unversioned machine-owned field.
-"""
+"""Python validation facade for the generated coordination-state contract."""
 
 from __future__ import annotations
 
-import json
-from importlib.resources import files
-from typing import Any, Mapping
+from typing import Mapping
+
+from .coordination_state_contract_generated import COORDINATION_STATE_CONTRACT
 
 
 COORDINATION_STATE_CONTRACT_SCHEMA_VERSION = "loopx_coordination_state_contract_v0"
-_CONTRACT_RESOURCE = "coordination_state_contract_v0.json"
 
 
 class CoordinationStateContractError(ValueError):
     """A record or bundled contract violates the coordination-state schema."""
 
 
-def _string_tuple(value: object, *, label: str) -> tuple[str, ...]:
-    if not isinstance(value, list) or not value:
-        raise CoordinationStateContractError(f"{label} must be a non-empty array")
-    if any(not isinstance(item, str) or not item for item in value):
-        raise CoordinationStateContractError(f"{label} must contain non-empty strings")
-    if len(set(value)) != len(value):
-        raise CoordinationStateContractError(f"{label} must not contain duplicates")
-    return tuple(value)
+if COORDINATION_STATE_CONTRACT.get("schema_version") != (
+    COORDINATION_STATE_CONTRACT_SCHEMA_VERSION
+):
+    raise CoordinationStateContractError("coordination state contract schema mismatch")
 
 
-def _validate_compatibility(value: object) -> None:
-    if not isinstance(value, dict) or value != {
-        "unknown_field_policy": "reject",
-        "field_removal_policy": "maintainer_approval_required",
-        "markdown_role": "human_workbench_and_compatibility_projection",
-    }:
-        raise CoordinationStateContractError("coordination state contract policy mismatch")
-
-
-def _load_contract() -> dict[str, Any]:
-    raw = json.loads(
-        files("loopx.control_plane.coordination")
-        .joinpath(_CONTRACT_RESOURCE)
-        .read_text(encoding="utf-8")
-    )
-    if not isinstance(raw, dict) or raw.get("schema_version") != (
-        COORDINATION_STATE_CONTRACT_SCHEMA_VERSION
-    ):
-        raise CoordinationStateContractError("coordination state contract schema mismatch")
-    _validate_compatibility(raw.get("compatibility"))
-    return raw
-
-
-COORDINATION_STATE_CONTRACT = _load_contract()
 _TODO_READ_RECORD = COORDINATION_STATE_CONTRACT.get("todo_read_record")
 if not isinstance(_TODO_READ_RECORD, dict):
     raise CoordinationStateContractError("Todo record contract must be an object")
@@ -67,21 +33,8 @@ if (
     or not TODO_ITEM_SCHEMA_VERSION
 ):
     raise CoordinationStateContractError("Todo record schema versions must be strings")
-TODO_CANONICAL_READ_RECORD_FIELDS = _string_tuple(
-    _TODO_READ_RECORD.get("fields"), label="todo_read_record.fields"
-)
-TODO_CANONICAL_REQUIRED_READ_FIELDS = _string_tuple(
-    _TODO_READ_RECORD.get("required_fields"),
-    label="todo_read_record.required_fields",
-)
-_UNKNOWN_REQUIRED_FIELDS = sorted(
-    set(TODO_CANONICAL_REQUIRED_READ_FIELDS).difference(TODO_CANONICAL_READ_RECORD_FIELDS)
-)
-if _UNKNOWN_REQUIRED_FIELDS:
-    raise CoordinationStateContractError(
-        "todo_read_record.required_fields are absent from fields: "
-        + ", ".join(_UNKNOWN_REQUIRED_FIELDS)
-    )
+TODO_CANONICAL_READ_RECORD_FIELDS = tuple(_TODO_READ_RECORD["fields"])
+TODO_CANONICAL_REQUIRED_READ_FIELDS = tuple(_TODO_READ_RECORD["required_fields"])
 
 _DOMAIN = COORDINATION_STATE_CONTRACT["todo_domain_record"]
 _PROJECTION = COORDINATION_STATE_CONTRACT["todo_projection_metadata"]

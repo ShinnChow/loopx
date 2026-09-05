@@ -24,6 +24,7 @@
     "loopx/control_plane/coordination/authority_store_codec.ts",
     "loopx/control_plane/coordination/coordination_projection.ts",
     "loopx/control_plane/coordination/coordination_state_contract.ts",
+    "loopx/control_plane/coordination/coordination_state_contract.generated.ts",
     "loopx/control_plane/coordination/file_authority_store.ts",
     "loopx/control_plane/coordination/legacy_writer_fence.ts",
     "loopx/control_plane/coordination/local_authority_runtime.ts",
