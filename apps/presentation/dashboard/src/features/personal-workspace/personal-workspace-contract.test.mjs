@@ -435,7 +435,7 @@ assert.match(larkSettings, /t\("lark\.connections"\)/, "Lark management exposes 
 for (const label of ["Connect Lark App", "Group chat", "Bind to Goal", "Create Goal topic automatically", "Topic reply"]) {
   assert.match(i18n, new RegExp(label), `English locale contains ${label}`);
 }
-assert.match(i18n, /One Lark App · many Goals · one topic per Goal/, "Connection cardinality is explicit");
+assert.match(i18n, /One Lark App · many Goals · one isolated route per Agent/, "Connection cardinality is explicit");
 assert.match(larkSettings, /lark_message_permissions_required/, "Missing message permissions receive an actionable error");
 assert.match(larkSettings, /selectedApp\?\.reply_ready/, "Connect stays disabled until automatic replies are healthy");
 assert.match(larkSettings, /lark\.health\.unavailable/, "Existing unhealthy connections expose localized reply health");
@@ -455,6 +455,8 @@ assert.match(larkSettings, /lark\.health\.notAddressed/, "Ignored unaddressed me
 assert.match(larkSettings, /lark\.health\.routeMismatch/, "Route mismatches receive an actionable connection repair hint");
 assert.match(larkSettings, /connectLarkGoalTopic\([^)]*execute:\s*false/s, "Connect flow previews before execution");
 assert.match(larkSettings, /connectLarkGoalTopic\([^)]*execute:\s*true/s, "Connect flow performs the approved external write");
+assert.match(larkSettings, /connectAllAgents[\s\S]*targetAgentIds[\s\S]*for \(const targetAgentId of targetAgentIds\)/, "One guided action can connect every registered Agent through isolated routes");
+assert.match(i18n, /Connect every registered Agent/, "Multi-Agent Goal Channel onboarding is explicit");
 assert.match(i18n, /Register another Lark App/, "App chooser exposes localized Feishu registration");
 assert.match(larkSettings, /startLarkAppSetup/, "Registration starts through the local setup API");
 assert.match(larkSettings, /fetchLarkAppSetup/, "Registration polls the local setup session");
