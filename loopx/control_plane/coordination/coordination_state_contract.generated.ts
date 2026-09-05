@@ -167,6 +167,12 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "write_check_request_schema": "loopx_legacy_coordination_write_check_request_v0",
     "write_check_result_schema": "loopx_legacy_coordination_write_check_result_v0"
   },
+  "delivery_continuity_protocol": {
+    "continuity_result_schema": "loopx_delivery_continuity_result_v0",
+    "boundary_result_schema": "loopx_delivery_boundary_result_v0",
+    "routing_request_schema": "loopx_delivery_routing_request_v0",
+    "routing_result_schema": "loopx_delivery_routing_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -220,3 +226,8 @@ export const LEGACY_COORDINATION_WRITER_FENCE_ENGAGE_REQUEST_SCHEMA = COORDINATI
 export const LEGACY_COORDINATION_WRITER_FENCE_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.result_schema;
 export const LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.write_check_request_schema;
 export const LEGACY_COORDINATION_WRITE_CHECK_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.write_check_result_schema;
+
+export const DELIVERY_CONTINUITY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.continuity_result_schema;
+export const DELIVERY_BOUNDARY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.boundary_result_schema;
+export const DELIVERY_ROUTING_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.routing_request_schema;
+export const DELIVERY_ROUTING_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.routing_result_schema;

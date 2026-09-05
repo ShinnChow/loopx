@@ -29,6 +29,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "runtime_shadow_protocol",
     "local_authority_shadow_protocol",
     "legacy_writer_fence_protocol",
+    "delivery_continuity_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -92,6 +93,12 @@ LEGACY_WRITER_FENCE_PROTOCOL_KEYS = (
     "result_schema",
     "write_check_request_schema",
     "write_check_result_schema",
+)
+DELIVERY_CONTINUITY_PROTOCOL_KEYS = (
+    "continuity_result_schema",
+    "boundary_result_schema",
+    "routing_request_schema",
+    "routing_result_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -187,6 +194,20 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("legacy writer fence protocol schemas must be non-empty strings")
     if len(set(writer_fence.values())) != len(writer_fence):
         raise ValueError("legacy writer fence protocol schemas must be unique")
+    delivery_continuity = raw.get("delivery_continuity_protocol")
+    if (
+        not isinstance(delivery_continuity, dict)
+        or tuple(delivery_continuity) != DELIVERY_CONTINUITY_PROTOCOL_KEYS
+    ):
+        raise ValueError("delivery continuity protocol has unexpected fields or order")
+    if any(
+        not isinstance(delivery_continuity.get(key), str)
+        or not delivery_continuity[key]
+        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
+    ):
+        raise ValueError("delivery continuity protocol schemas must be non-empty strings")
+    if len(set(delivery_continuity.values())) != len(delivery_continuity):
+        raise ValueError("delivery continuity protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -236,6 +257,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{writer_fence[key]!r}"
         for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
     )
+    delivery_continuity = contract["delivery_continuity_protocol"]
+    delivery_continuity_constants = "\n".join(
+        f"DELIVERY_{key.upper()}: Final[str] = {delivery_continuity[key]!r}"
+        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -252,6 +278,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{shadow_constants}\n\n"
         f"{local_shadow_constants}\n\n"
         f"{writer_fence_constants}\n"
+        f"\n{delivery_continuity_constants}\n"
     )
 
 
@@ -277,6 +304,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.{key};"
         for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
     )
+    delivery_continuity_constants = "\n".join(
+        f"export const DELIVERY_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.{key};"
+        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -291,6 +323,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"{shadow_constants}\n\n"
         f"{local_shadow_constants}\n\n"
         f"{writer_fence_constants}\n"
+        f"\n{delivery_continuity_constants}\n"
     )
 
 

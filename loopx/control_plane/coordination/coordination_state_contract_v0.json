@@ -146,6 +146,12 @@
     "write_check_request_schema": "loopx_legacy_coordination_write_check_request_v0",
     "write_check_result_schema": "loopx_legacy_coordination_write_check_result_v0"
   },
+  "delivery_continuity_protocol": {
+    "continuity_result_schema": "loopx_delivery_continuity_result_v0",
+    "boundary_result_schema": "loopx_delivery_boundary_result_v0",
+    "routing_request_schema": "loopx_delivery_routing_request_v0",
+    "routing_result_schema": "loopx_delivery_routing_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
