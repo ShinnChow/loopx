@@ -168,6 +168,15 @@ Todo sections, but must not promote stale Markdown back to canonical truth.
 
 ## Migration Path
 
+The explicit projector currently accepts only complete legacy v0 records for
+the two active Todo sections. Native `TodoDomainRecord` manifests and archived
+records remain fail-closed inputs; this command must not invent missing
+Markdown provenance or claim native/archive export qualification. A later
+adapter slice must prove native domain parity, legacy ordering preservation,
+and archive ownership before expanding that boundary. It is a manual
+read-time projection, not the transaction-bound projection outbox needed for
+automatic synchronization.
+
 1. Emit this projection from active-state Markdown.
 2. Add parity smokes comparing it with existing status todo summaries.
 3. Move Markdown parsing into a dedicated active-state read-model module behind

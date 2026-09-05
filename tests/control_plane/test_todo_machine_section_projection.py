@@ -122,6 +122,17 @@ def test_projection_rejects_missing_role_section() -> None:
         )
 
 
+def test_projection_does_not_invent_native_markdown_provenance() -> None:
+    records = _records()
+    for record in records:
+        record["schema_version"] = "todo_domain_record_v0"
+        del record["source_section"]
+        del record["index"]
+    with pytest.raises(ValueError, match="omits required fields: source_section"):
+        render_canonical_todo_sections(SOURCE, records, provider_revision="rev-native")
+    assert all("source_section" not in record and "index" not in record for record in records)
+
+
 def test_projection_rejects_unknown_or_derived_field_loss() -> None:
     unknown = deepcopy(_records())
     unknown[0]["future_field"] = "must-not-disappear"
