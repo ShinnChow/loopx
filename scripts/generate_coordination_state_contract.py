@@ -265,12 +265,25 @@ def render_python(contract: dict[str, Any]) -> str:
 
 
 def render_typescript(contract: dict[str, Any]) -> str:
-    literal = json.dumps(contract, indent=2, ensure_ascii=False)
+    # Declare each wire identity once, then compose the public contract from
+    # those literal-typed bindings. JSON remains the sole editable source.
     constants = "\n\n".join(
-        "\n".join(f"export const {name} = COORDINATION_STATE_CONTRACT.{section}.{key};"
+        "\n".join(f"export const {name} = {json.dumps(contract[section][key])};"
                   for key, name in bindings.items())
         for section, bindings in PROTOCOL_BINDINGS.items()
     )
+    sections = []
+    for section, value in contract.items():
+        if section in PROTOCOL_BINDINGS:
+            fields = ",\n".join(
+                f"    {json.dumps(key)}: {name}"
+                for key, name in PROTOCOL_BINDINGS[section].items()
+            )
+            rendered = "{\n" + fields + "\n  }"
+        else:
+            rendered = json.dumps(value, indent=2, ensure_ascii=False).replace("\n", "\n  ")
+        sections.append(f"  {json.dumps(section)}: {rendered}")
+    literal = "{\n" + ",\n".join(sections) + "\n}"
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -280,8 +293,8 @@ def render_typescript(contract: dict[str, Any]) -> str:
         "  }\n"
         "  return value;\n"
         "}\n\n"
+        f"{constants}\n\n"
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
-        f"{constants}\n"
     )
 
 
