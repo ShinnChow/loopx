@@ -454,9 +454,11 @@ At minimum, tests must prove:
   grants no claim, lease, lifecycle, verifier, or amendment authority;
 - disabling or removing the advisory provider does not block authority-source
   collection, while amendment submission still independently requires the
-  current Goal revision and intent digest; and
-- loss of a host locator cannot erase a durable proposal or receipt, and a
-  cross-Goal rendezvous cannot produce one cross-Goal canonical commit.
+  current Goal revision and intent digest.
+
+Existing Goal-amendment and authority-store conformance tests remain the owners
+of durable proposal, receipt recovery, and cross-Goal commit isolation. The
+optional locator/provider tests must not duplicate those state-machine suites.
 
 ## 12. Non-goals
 

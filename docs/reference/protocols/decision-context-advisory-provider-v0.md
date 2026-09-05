@@ -47,7 +47,7 @@ The runtime receives a `decision_context_advisory_retrieve_request_v0` object:
 | `query` | Bounded private retrieval query. |
 | `query_summary` | Public-safe description; the raw query is not projected. |
 | `max_results` | Positive integer, capped by Core at 8. |
-| `timeout_seconds` | Whole-second execution timeout of at least 1, further capped by the extension binding. Unsupported sub-second values fail open at the capability boundary. |
+| `timeout_seconds` | Finite execution timeout from 1 through 120 seconds, further capped by the extension binding. |
 | `observed_at` | Caller observation time. |
 
 The provider must not interpret a scope as a Goal identity or authority grant.

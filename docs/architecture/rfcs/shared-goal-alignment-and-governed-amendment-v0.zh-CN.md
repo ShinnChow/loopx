@@ -416,9 +416,11 @@ root intent 不能自动 commit，除非 Goal 创建时已经精确委托该 cla
 - host-task locator 只能通过当前项目 binding 解析，且不授予 claim、lease、
   lifecycle、verifier 或 amendment authority；
 - 禁用或移除 advisory provider 不会阻断 authority-source collection，而 amendment
-  submission 仍必须独立绑定当前 Goal revision 与 intent digest；
-- host locator 丢失不能删除 durable proposal 或 receipt，cross-Goal rendezvous 也
-  不能产生一次跨 Goal canonical commit。
+  submission 仍必须独立绑定当前 Goal revision 与 intent digest。
+
+Durable proposal、receipt recovery 与 cross-Goal commit isolation 仍由既有 Goal
+amendment 和 authority-store conformance tests 负责。可选 locator/provider 的测试
+不得重复这些状态机测试。
 
 ## 12. 非目标
 
