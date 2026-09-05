@@ -26,6 +26,7 @@ from .control_plane.agents.workspace_guard import (
 from .control_plane.quota.settlement import (
     SettlementIdentity,
     read_heartbeat_settlement,
+    render_refresh_recovery_markdown,
     settlement_result_payload,
 )
 from .control_plane.quota.settlement_workspace_causality import resolve_settlement_workspace_requirement
@@ -584,28 +585,9 @@ def _build_state_refresh_output_projections(
 
 
 def render_state_refresh_markdown(payload: dict[str, Any]) -> str:
-    recovery = payload.get("refresh_recovery") or {}
-    if recovery.get("decision") in {"replay", "repair_receipt", "reject"}:
-        lines = [
-            "# LoopX State Refresh",
-            "",
-            f"- ok: `{payload.get('ok')}`",
-            f"- recovery: `{recovery['decision']}`",
-            f"- reason: `{recovery.get('reason')}`",
-            "- appended: `False` — original writeback preserved; no new delivery or spend.",
-        ]
-        checkpoint = payload.get("vision_checkpoint") or {}
-        if checkpoint:
-            lines.append(
-                f"- vision_checkpoint: `{checkpoint.get('decision')}`; satisfied={checkpoint.get('satisfied')}"
-            )
-        if payload.get("error"):
-            lines.append(str(payload["error"]))
-        elif checkpoint.get("satisfied") is False:
-            lines.append(
-                "Retry the same refresh command and Turn with --vision-unchanged-reason if an existing vision still applies, or --agent-vision-json for a valid vision patch. Do not repeat work or begin a new Turn for this checkpoint."
-            )
-        return "\n".join(lines)
+    recovery_markdown = render_refresh_recovery_markdown(payload)
+    if recovery_markdown is not None:
+        return recovery_markdown
     state = payload.get("state") if isinstance(payload.get("state"), dict) else {}
     frontmatter = state.get("frontmatter") if isinstance(state.get("frontmatter"), dict) else {}
     lines = [

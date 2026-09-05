@@ -94,9 +94,25 @@ export function refreshRecovery(
     ? normalizeDeliveryWorkspaceSnapshot(prior.delivery_workspace) : null;
   const missingWorkspace = request.workspace_requested && workspaceRequirement !== "not_required" &&
     workspace === null;
-  // A monitor's existing legacy causal supplement supplies its missing batch
-  // declaration too. It is not permission to alter a normal committed delivery.
-  if ((changedDelivery && !(missingWorkspace && prior.classification === "quota_monitor_poll")) ||
+  // A material poll is not a completed refresh: its receipt-bound first
+  // workspace supplement may author next-action/vision through normal refresh
+  // validation. Once appended, the recovery digests restore strict replay.
+  const firstMonitorCloseout = missingWorkspace && prior.classification === "quota_monitor_poll" &&
+    prior.material_change === true && prior.refresh_recovery == null && checkpoint === null;
+  if (firstMonitorCloseout) {
+    const unrelatedMutation = Object.entries(request.mutation).some(([key, value]) =>
+      key !== "next_action" && value !== null && value !== false &&
+      (!Array.isArray(value) || value.length > 0));
+    if (unrelatedMutation ||
+        (request.delivery_outcome !== null && request.delivery_outcome !== prior.delivery_outcome) ||
+        (request.progress_observation !== null &&
+          canonical(request.progress_observation) !== canonical(prior.progress_observation ?? null))) {
+      return result("reject", "committed_writeback_payload_conflict");
+    }
+    if (wantsVision && laterAgentVision) return result("reject", "checkpoint_superseded_by_later_vision");
+    return result("supplement_workspace", "complete_material_monitor_writeback");
+  }
+  if (changedDelivery ||
       (changesMutation && mutationDigest !== jsonObject(prior.refresh_recovery)?.mutation_digest)) {
     return result("reject", "committed_writeback_payload_conflict");
   }

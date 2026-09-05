@@ -778,8 +778,12 @@ or reattributing its delivery workspace. An identical retry returns `replay`
 with the saved checkpoint; it does not append again. A changed satisfied
 decision, changed delivery payload, or a missing checkpoint superseded by a
 later same-Agent vision is rejected with no write. Dry-run previews do not
-repair receipts or append history. Workspace-only monitor supplementation
-remains supported; repair that missing causality before adding a checkpoint.
+repair receipts or append history. A receipt-bound material monitor poll with
+no prior refresh/checkpoint may complete its missing workspace writeback with
+next-action and vision together, through the normal vision/replan validation.
+This first-closeout compatibility path preserves the poll outcome and rejects
+unrelated mutations; subsequent retries use the same strict replay/conflict
+rules. Other missing-workspace repairs precede checkpoint supplementation.
 
 Do not repeat implementation, manufacture a successor, or open another Turn
 just to repair this checkpoint. Keep the ordinary one-spend settlement order.
