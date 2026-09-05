@@ -13,6 +13,12 @@ import {
   TODO_DOMAIN_ITEM_SCHEMA,
   TODO_DOMAIN_RECORD_CONTRACT,
 } from "../../loopx/control_plane/coordination/coordination_state_contract.ts";
+import {
+  LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as GENERATED_LIST_REQUEST_SCHEMA,
+} from "../../loopx/control_plane/coordination/coordination_state_contract.generated.ts";
+import {
+  LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as RUNTIME_LIST_REQUEST_SCHEMA,
+} from "../../loopx/control_plane/coordination/local_authority_runtime.ts";
 
 const TODO = {
   schema_version: "todo_item_v0",
@@ -69,6 +75,10 @@ test("generated coordination bindings are current", async () => {
     child.on("error", reject);
     child.on("close", (code) => code === 0 ? resolve() : reject(new Error(stderr)));
   });
+});
+
+test("TypeScript runtime re-exports generated local-authority protocol schemas", () => {
+  assert.equal(RUNTIME_LIST_REQUEST_SCHEMA, GENERATED_LIST_REQUEST_SCHEMA);
 });
 
 test("provider-bound Todo records preserve every declared field", () => {

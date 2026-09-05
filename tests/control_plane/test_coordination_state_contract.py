@@ -15,6 +15,12 @@ from loopx.control_plane.coordination.coordination_state_contract import (
     TODO_DOMAIN_ITEM_SCHEMA_VERSION,
     TODO_PROJECTION_METADATA_FIELDS,
 )
+from loopx.control_plane.coordination.coordination_state_contract_generated import (
+    LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+)
+from loopx.control_plane.coordination.local_authority import (
+    LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as BRIDGE_LIST_REQUEST_SCHEMA,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -89,6 +95,10 @@ def test_domain_projection_split_keeps_archival_as_a_task_fact() -> None:
     with_archive = canonical_todo_summary_fields([todo, archived])
     assert with_archive["agent_todos"]["done_count"] == summary["agent_todos"]["done_count"]
     assert with_archive["agent_todos"]["archived_advancement_done_count"] == 1
+
+
+def test_python_bridge_uses_generated_local_authority_protocol_schemas() -> None:
+    assert BRIDGE_LIST_REQUEST_SCHEMA == LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA
 
 
 def test_record_validation_rejects_required_fields_outside_declared_fields() -> None:
