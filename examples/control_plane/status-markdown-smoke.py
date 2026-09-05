@@ -54,7 +54,6 @@ from status_markdown_fixtures import (  # noqa: E402
     DEPENDENCY_MONITOR_TODO,
     DEPENDENCY_USER_TODO,
     EXPLICIT_REFRESH_CLASSIFICATION,
-    NEW_PLANNED_ACTION,
     OLD_PLANNED_ACTION,
     POST_HANDOFF_ACTION,
     POST_HANDOFF_CLASSIFICATION,
@@ -1228,11 +1227,13 @@ def main() -> int:
             root,
             generated_at="2026-01-01T00:05:00+00:00",
             classification="delivery_owner_drop_shape_test",
+            delivery_batch_scale="test_only",
         )
         append_connected_delivery_fixture(
             root,
             generated_at="2026-01-01T00:06:00+00:00",
             classification="delivery_active_blocker_snapshot_test",
+            delivery_batch_scale="test_only",
         )
         small_streak_payload, small_streak_markdown = collect_fixture_status(root, delivery_registry_path)
     with tempfile.TemporaryDirectory(prefix="loopx-status-connected-delivery-surface-loop-") as tmp:
@@ -1242,16 +1243,22 @@ def main() -> int:
             root,
             generated_at="2026-01-01T00:05:00+00:00",
             classification="delivery_owner_drop_landing_forecast_implementation",
+            delivery_batch_scale="implementation",
+            delivery_outcome="surface_only",
         )
         append_connected_delivery_fixture(
             root,
             generated_at="2026-01-01T00:06:00+00:00",
             classification="delivery_owner_drop_scenario_runbook_implementation",
+            delivery_batch_scale="implementation",
+            delivery_outcome="surface_only",
         )
         append_connected_delivery_fixture(
             root,
             generated_at="2026-01-01T00:07:00+00:00",
             classification="delivery_next_action_queue_owner_drop_fields_implementation",
+            delivery_batch_scale="implementation",
+            delivery_outcome="surface_only",
         )
         surface_loop_payload, surface_loop_markdown = collect_fixture_status(root, delivery_registry_path)
 
