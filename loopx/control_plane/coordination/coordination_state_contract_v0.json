@@ -175,6 +175,12 @@
     "post_writeback_receipt_schema": "loopx_post_writeback_capability_hook_receipt_v0",
     "intent_schema": "loopx_capability_intent_v0"
   },
+  "action_portfolio_protocol": {
+    "selection_request_schema": "action_selection_qualification_request_v0",
+    "selection_result_schema": "action_selection_qualification_v0",
+    "planning_packet_request_schema": "quota_planning_packet_request_v0",
+    "planning_packet_result_schema": "quota_planning_packet_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",

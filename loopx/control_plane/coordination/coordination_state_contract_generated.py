@@ -166,6 +166,10 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
                               'post_writeback_result_schema': 'loopx_post_writeback_capability_hook_result_v0',
                               'post_writeback_receipt_schema': 'loopx_post_writeback_capability_hook_receipt_v0',
                               'intent_schema': 'loopx_capability_intent_v0'},
+ 'action_portfolio_protocol': {'selection_request_schema': 'action_selection_qualification_request_v0',
+                               'selection_result_schema': 'action_selection_qualification_v0',
+                               'planning_packet_request_schema': 'quota_planning_packet_request_v0',
+                               'planning_packet_result_schema': 'quota_planning_packet_v0'},
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
                    'markdown_role': 'human_workbench_and_compatibility_projection'}})
@@ -241,3 +245,8 @@ CAPABILITY_HOOK_POST_WRITEBACK_INPUT_SCHEMA: Final[str] = 'loopx_post_writeback_
 CAPABILITY_HOOK_POST_WRITEBACK_RESULT_SCHEMA: Final[str] = 'loopx_post_writeback_capability_hook_result_v0'
 CAPABILITY_HOOK_POST_WRITEBACK_RECEIPT_SCHEMA: Final[str] = 'loopx_post_writeback_capability_hook_receipt_v0'
 CAPABILITY_HOOK_INTENT_SCHEMA: Final[str] = 'loopx_capability_intent_v0'
+
+ACTION_PORTFOLIO_SELECTION_REQUEST_SCHEMA: Final[str] = 'action_selection_qualification_request_v0'
+ACTION_PORTFOLIO_SELECTION_RESULT_SCHEMA: Final[str] = 'action_selection_qualification_v0'
+ACTION_PORTFOLIO_PLANNING_PACKET_REQUEST_SCHEMA: Final[str] = 'quota_planning_packet_request_v0'
+ACTION_PORTFOLIO_PLANNING_PACKET_RESULT_SCHEMA: Final[str] = 'quota_planning_packet_v0'

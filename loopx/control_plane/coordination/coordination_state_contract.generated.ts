@@ -196,6 +196,12 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "post_writeback_receipt_schema": "loopx_post_writeback_capability_hook_receipt_v0",
     "intent_schema": "loopx_capability_intent_v0"
   },
+  "action_portfolio_protocol": {
+    "selection_request_schema": "action_selection_qualification_request_v0",
+    "selection_result_schema": "action_selection_qualification_v0",
+    "planning_packet_request_schema": "quota_planning_packet_request_v0",
+    "planning_packet_result_schema": "quota_planning_packet_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -274,3 +280,8 @@ export const CAPABILITY_HOOK_POST_WRITEBACK_INPUT_SCHEMA = COORDINATION_STATE_CO
 export const CAPABILITY_HOOK_POST_WRITEBACK_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_result_schema;
 export const CAPABILITY_HOOK_POST_WRITEBACK_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_receipt_schema;
 export const CAPABILITY_HOOK_INTENT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.intent_schema;
+
+export const ACTION_PORTFOLIO_SELECTION_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.selection_request_schema;
+export const ACTION_PORTFOLIO_SELECTION_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.selection_result_schema;
+export const ACTION_PORTFOLIO_PLANNING_PACKET_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.planning_packet_request_schema;
+export const ACTION_PORTFOLIO_PLANNING_PACKET_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.action_portfolio_protocol.planning_packet_result_schema;

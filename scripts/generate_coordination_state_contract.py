@@ -33,6 +33,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "delivery_workspace_protocol",
     "task_lease_protocol",
     "capability_hook_protocol",
+    "action_portfolio_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -125,6 +126,12 @@ CAPABILITY_HOOK_PROTOCOL_KEYS = (
     "post_writeback_result_schema",
     "post_writeback_receipt_schema",
     "intent_schema",
+)
+ACTION_PORTFOLIO_PROTOCOL_KEYS = (
+    "selection_request_schema",
+    "selection_result_schema",
+    "planning_packet_request_schema",
+    "planning_packet_result_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -271,6 +278,19 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("capability hook protocol schemas must be non-empty strings")
     if len(set(capability_hook.values())) != len(capability_hook):
         raise ValueError("capability hook protocol schemas must be unique")
+    action_portfolio = raw.get("action_portfolio_protocol")
+    if (
+        not isinstance(action_portfolio, dict)
+        or tuple(action_portfolio) != ACTION_PORTFOLIO_PROTOCOL_KEYS
+    ):
+        raise ValueError("action portfolio protocol has unexpected fields or order")
+    if any(
+        not isinstance(action_portfolio.get(key), str) or not action_portfolio[key]
+        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
+    ):
+        raise ValueError("action portfolio protocol schemas must be non-empty strings")
+    if len(set(action_portfolio.values())) != len(action_portfolio):
+        raise ValueError("action portfolio protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -340,6 +360,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"CAPABILITY_HOOK_{key.upper()}: Final[str] = {capability_hook[key]!r}"
         for key in CAPABILITY_HOOK_PROTOCOL_KEYS
     )
+    action_portfolio = contract["action_portfolio_protocol"]
+    action_portfolio_constants = "\n".join(
+        f"ACTION_PORTFOLIO_{key.upper()}: Final[str] = {action_portfolio[key]!r}"
+        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -360,6 +385,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"\n{delivery_workspace_constants}\n"
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
+        f"\n{action_portfolio_constants}\n"
     )
 
 
@@ -405,6 +431,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.capability_hook_protocol.{key};"
         for key in CAPABILITY_HOOK_PROTOCOL_KEYS
     )
+    action_portfolio_constants = "\n".join(
+        f"export const ACTION_PORTFOLIO_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.action_portfolio_protocol.{key};"
+        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -423,6 +454,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"\n{delivery_workspace_constants}\n"
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
+        f"\n{action_portfolio_constants}\n"
     )
 
 
