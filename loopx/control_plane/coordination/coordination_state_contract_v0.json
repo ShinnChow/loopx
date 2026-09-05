@@ -105,6 +105,21 @@
     "promotion_result_schema": "loopx_local_coordination_promotion_result_v0",
     "promotion_receipt_schema": "loopx_local_coordination_promotion_receipt_v0"
   },
+  "runtime_shadow_protocol": {
+    "commit_request_schema": "loopx_coordination_runtime_shadow_commit_v0",
+    "commit_result_schema": "loopx_coordination_runtime_shadow_result_v0",
+    "receipt_schema": "loopx_coordination_runtime_shadow_receipt_v0",
+    "inspect_request_schema": "loopx_coordination_runtime_shadow_inspect_v0",
+    "inspect_result_schema": "loopx_coordination_runtime_shadow_inspection_v0",
+    "bootstrap_request_schema": "loopx_coordination_runtime_shadow_bootstrap_v0",
+    "bootstrap_result_schema": "loopx_coordination_runtime_shadow_bootstrap_result_v0",
+    "rollback_request_schema": "loopx_coordination_runtime_shadow_rollback_v0",
+    "rollback_result_schema": "loopx_coordination_runtime_shadow_rollback_result_v0",
+    "qualify_request_schema": "loopx_coordination_runtime_shadow_qualify_v0",
+    "qualify_result_schema": "loopx_coordination_runtime_shadow_qualification_v0",
+    "todo_read_request_schema": "loopx_coordination_runtime_shadow_todo_read_v0",
+    "todo_read_result_schema": "loopx_coordination_runtime_shadow_todo_read_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",

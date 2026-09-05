@@ -26,6 +26,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "schema_version", "todo_read_record", "todo_domain_record",
     "todo_projection_metadata", "compatibility",
     "local_authority_protocol",
+    "runtime_shadow_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -48,6 +49,21 @@ LOCAL_AUTHORITY_PROTOCOL_KEYS = (
     "promotion_request_schema",
     "promotion_result_schema",
     "promotion_receipt_schema",
+)
+RUNTIME_SHADOW_PROTOCOL_KEYS = (
+    "commit_request_schema",
+    "commit_result_schema",
+    "receipt_schema",
+    "inspect_request_schema",
+    "inspect_result_schema",
+    "bootstrap_request_schema",
+    "bootstrap_result_schema",
+    "rollback_request_schema",
+    "rollback_result_schema",
+    "qualify_request_schema",
+    "qualify_result_schema",
+    "todo_read_request_schema",
+    "todo_read_result_schema",
 )
 
 
@@ -95,6 +111,19 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("local authority protocol schemas must be non-empty strings")
     if len(set(protocol.values())) != len(protocol):
         raise ValueError("local authority protocol schemas must be unique")
+    runtime_shadow = raw.get("runtime_shadow_protocol")
+    if (
+        not isinstance(runtime_shadow, dict)
+        or tuple(runtime_shadow) != RUNTIME_SHADOW_PROTOCOL_KEYS
+    ):
+        raise ValueError("runtime shadow protocol has unexpected fields or order")
+    if any(
+        not isinstance(runtime_shadow.get(key), str) or not runtime_shadow[key]
+        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
+    ):
+        raise ValueError("runtime shadow protocol schemas must be non-empty strings")
+    if len(set(runtime_shadow.values())) != len(runtime_shadow):
+        raise ValueError("runtime shadow protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -123,9 +152,15 @@ def load_contract() -> dict[str, Any]:
 def render_python(contract: dict[str, Any]) -> str:
     literal = pformat(contract, width=88, sort_dicts=False)
     protocol = contract["local_authority_protocol"]
-    constants = "\n".join(
+    local_constants = "\n".join(
         f"LOCAL_COORDINATION_{key.upper()}: Final[str] = {protocol[key]!r}"
         for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
+    )
+    runtime_shadow = contract["runtime_shadow_protocol"]
+    shadow_constants = "\n".join(
+        f"COORDINATION_RUNTIME_SHADOW_{key.upper()}: Final[str] = "
+        f"{runtime_shadow[key]!r}"
+        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
     )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
@@ -139,16 +174,22 @@ def render_python(contract: dict[str, Any]) -> str:
         "        return tuple(_freeze(item) for item in value)\n"
         "    return value\n\n"
         f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
-        f"{constants}\n"
+        f"{local_constants}\n\n"
+        f"{shadow_constants}\n"
     )
 
 
 def render_typescript(contract: dict[str, Any]) -> str:
     literal = json.dumps(contract, indent=2, ensure_ascii=False)
-    constants = "\n".join(
+    local_constants = "\n".join(
         f"export const LOCAL_COORDINATION_{key.upper()} = "
         f"COORDINATION_STATE_CONTRACT.local_authority_protocol.{key};"
         for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
+    )
+    shadow_constants = "\n".join(
+        f"export const COORDINATION_RUNTIME_SHADOW_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.{key};"
+        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
     )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
@@ -160,7 +201,8 @@ def render_typescript(contract: dict[str, Any]) -> str:
         "  return value;\n"
         "}\n\n"
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
-        f"{constants}\n"
+        f"{local_constants}\n\n"
+        f"{shadow_constants}\n"
     )
 
 

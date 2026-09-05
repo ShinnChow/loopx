@@ -15,30 +15,27 @@ from pathlib import Path
 from typing import Any
 
 from ..effect_runtime import effect_runtime_result
+from .coordination_state_contract_generated import (
+    COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_REQUEST_SCHEMA as RUNTIME_SHADOW_BOOTSTRAP_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_RESULT_SCHEMA,
+    COORDINATION_RUNTIME_SHADOW_COMMIT_REQUEST_SCHEMA as RUNTIME_SHADOW_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_INSPECT_REQUEST_SCHEMA as RUNTIME_SHADOW_INSPECT_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_INSPECT_RESULT_SCHEMA,
+    COORDINATION_RUNTIME_SHADOW_QUALIFY_REQUEST_SCHEMA as RUNTIME_SHADOW_QUALIFY_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA,
+    COORDINATION_RUNTIME_SHADOW_ROLLBACK_REQUEST_SCHEMA as RUNTIME_SHADOW_ROLLBACK_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_ROLLBACK_RESULT_SCHEMA,
+    COORDINATION_RUNTIME_SHADOW_TODO_READ_REQUEST_SCHEMA as RUNTIME_SHADOW_TODO_READ_REQUEST_SCHEMA_VERSION,
+    COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA,
+)
 
 
 RUNTIME_SHADOW_CONFIG_SCHEMA_VERSION = "loopx_coordination_runtime_shadow_config_v0"
-RUNTIME_SHADOW_REQUEST_SCHEMA_VERSION = "loopx_coordination_runtime_shadow_commit_v0"
 RUNTIME_SHADOW_METHOD = "coordination.runtime_shadow.commit"
-RUNTIME_SHADOW_INSPECT_REQUEST_SCHEMA_VERSION = (
-    "loopx_coordination_runtime_shadow_inspect_v0"
-)
 RUNTIME_SHADOW_INSPECT_METHOD = "coordination.runtime_shadow.inspect"
-RUNTIME_SHADOW_BOOTSTRAP_REQUEST_SCHEMA_VERSION = (
-    "loopx_coordination_runtime_shadow_bootstrap_v0"
-)
 RUNTIME_SHADOW_BOOTSTRAP_METHOD = "coordination.runtime_shadow.bootstrap"
-RUNTIME_SHADOW_ROLLBACK_REQUEST_SCHEMA_VERSION = (
-    "loopx_coordination_runtime_shadow_rollback_v0"
-)
 RUNTIME_SHADOW_ROLLBACK_METHOD = "coordination.runtime_shadow.rollback"
-RUNTIME_SHADOW_QUALIFY_REQUEST_SCHEMA_VERSION = (
-    "loopx_coordination_runtime_shadow_qualify_v0"
-)
 RUNTIME_SHADOW_QUALIFY_METHOD = "coordination.runtime_shadow.qualify"
-RUNTIME_SHADOW_TODO_READ_REQUEST_SCHEMA_VERSION = (
-    "loopx_coordination_runtime_shadow_todo_read_v0"
-)
 RUNTIME_SHADOW_TODO_READ_METHOD = "coordination.runtime_shadow.todo_read_candidate"
 
 
@@ -252,7 +249,7 @@ def bootstrap_coordination_runtime_shadow(
     config = resolve_coordination_runtime_shadow_config(goal)
     if not config.enabled:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_bootstrap_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_RESULT_SCHEMA,
             "status": "disabled",
             "reason_code": config.reason_code,
             "primary_writeback_preserved": True,
@@ -270,7 +267,7 @@ def bootstrap_coordination_runtime_shadow(
         result = runtime_invoker(RUNTIME_SHADOW_BOOTSTRAP_METHOD, request)
     except Exception as exc:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_bootstrap_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_bootstrap_runtime_unavailable",
             "reason": str(exc),
@@ -279,7 +276,7 @@ def bootstrap_coordination_runtime_shadow(
         }
     if not isinstance(result, Mapping):
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_bootstrap_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_bootstrap_runtime_result_invalid",
             "primary_writeback_preserved": True,
@@ -302,7 +299,7 @@ def rollback_coordination_runtime_shadow(
     config = resolve_coordination_runtime_shadow_config(goal)
     if not config.enabled:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_rollback_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_ROLLBACK_RESULT_SCHEMA,
             "status": "disabled",
             "reason_code": config.reason_code,
             "primary_writeback_preserved": True,
@@ -319,7 +316,7 @@ def rollback_coordination_runtime_shadow(
         result = runtime_invoker(RUNTIME_SHADOW_ROLLBACK_METHOD, request)
     except Exception as exc:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_rollback_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_ROLLBACK_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_rollback_runtime_unavailable",
             "reason": str(exc),
@@ -328,7 +325,7 @@ def rollback_coordination_runtime_shadow(
         }
     if not isinstance(result, Mapping):
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_rollback_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_ROLLBACK_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_rollback_runtime_result_invalid",
             "primary_writeback_preserved": True,
@@ -350,7 +347,7 @@ def inspect_coordination_runtime_shadow(
     config = resolve_coordination_runtime_shadow_config(goal)
     if not config.enabled:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_inspection_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_INSPECT_RESULT_SCHEMA,
             "status": "disabled",
             "reason_code": config.reason_code,
             "parity_matches": False,
@@ -367,7 +364,7 @@ def inspect_coordination_runtime_shadow(
         result = runtime_invoker(RUNTIME_SHADOW_INSPECT_METHOD, request)
     except Exception as exc:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_inspection_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_INSPECT_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_runtime_unavailable",
             "reason": str(exc),
@@ -377,7 +374,7 @@ def inspect_coordination_runtime_shadow(
         }
     if not isinstance(result, Mapping):
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_inspection_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_INSPECT_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_runtime_result_invalid",
             "parity_matches": False,
@@ -402,7 +399,7 @@ def qualify_coordination_runtime_shadow(
     config = resolve_coordination_runtime_shadow_config(goal)
     if not config.enabled:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_qualification_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA,
             "status": "disabled",
             "reason_code": config.reason_code,
             "qualified": False,
@@ -421,7 +418,7 @@ def qualify_coordination_runtime_shadow(
         result = runtime_invoker(RUNTIME_SHADOW_QUALIFY_METHOD, request)
     except Exception as exc:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_qualification_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_qualification_runtime_unavailable",
             "reason": str(exc),
@@ -431,7 +428,7 @@ def qualify_coordination_runtime_shadow(
         }
     if not isinstance(result, Mapping):
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_qualification_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_qualification_runtime_result_invalid",
             "qualified": False,
@@ -455,7 +452,7 @@ def read_coordination_runtime_shadow_todo_candidate(
     config = resolve_coordination_runtime_shadow_config(goal)
     if not config.enabled:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_todo_read_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA,
             "status": "disabled",
             "reason_code": config.reason_code,
             "read_candidate_qualified": False,
@@ -472,7 +469,7 @@ def read_coordination_runtime_shadow_todo_candidate(
         result = runtime_invoker(RUNTIME_SHADOW_TODO_READ_METHOD, request)
     except Exception as exc:
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_todo_read_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_todo_read_runtime_unavailable",
             "reason": str(exc),
@@ -481,7 +478,7 @@ def read_coordination_runtime_shadow_todo_candidate(
         }
     if not isinstance(result, Mapping):
         return {
-            "schema_version": "loopx_coordination_runtime_shadow_todo_read_result_v0",
+            "schema_version": COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA,
             "status": "failed",
             "reason_code": "shadow_todo_read_runtime_result_invalid",
             "read_candidate_qualified": False,

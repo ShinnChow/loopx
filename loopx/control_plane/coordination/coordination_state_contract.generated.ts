@@ -126,6 +126,21 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "promotion_result_schema": "loopx_local_coordination_promotion_result_v0",
     "promotion_receipt_schema": "loopx_local_coordination_promotion_receipt_v0"
   },
+  "runtime_shadow_protocol": {
+    "commit_request_schema": "loopx_coordination_runtime_shadow_commit_v0",
+    "commit_result_schema": "loopx_coordination_runtime_shadow_result_v0",
+    "receipt_schema": "loopx_coordination_runtime_shadow_receipt_v0",
+    "inspect_request_schema": "loopx_coordination_runtime_shadow_inspect_v0",
+    "inspect_result_schema": "loopx_coordination_runtime_shadow_inspection_v0",
+    "bootstrap_request_schema": "loopx_coordination_runtime_shadow_bootstrap_v0",
+    "bootstrap_result_schema": "loopx_coordination_runtime_shadow_bootstrap_result_v0",
+    "rollback_request_schema": "loopx_coordination_runtime_shadow_rollback_v0",
+    "rollback_result_schema": "loopx_coordination_runtime_shadow_rollback_result_v0",
+    "qualify_request_schema": "loopx_coordination_runtime_shadow_qualify_v0",
+    "qualify_result_schema": "loopx_coordination_runtime_shadow_qualification_v0",
+    "todo_read_request_schema": "loopx_coordination_runtime_shadow_todo_read_v0",
+    "todo_read_result_schema": "loopx_coordination_runtime_shadow_todo_read_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -141,3 +156,17 @@ export const LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA = COORDINATION_STATE_CON
 export const LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_protocol.promotion_request_schema;
 export const LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_protocol.promotion_result_schema;
 export const LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_protocol.promotion_receipt_schema;
+
+export const COORDINATION_RUNTIME_SHADOW_COMMIT_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.commit_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_COMMIT_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.commit_result_schema;
+export const COORDINATION_RUNTIME_SHADOW_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.receipt_schema;
+export const COORDINATION_RUNTIME_SHADOW_INSPECT_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.inspect_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_INSPECT_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.inspect_result_schema;
+export const COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.bootstrap_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_BOOTSTRAP_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.bootstrap_result_schema;
+export const COORDINATION_RUNTIME_SHADOW_ROLLBACK_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.rollback_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_ROLLBACK_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.rollback_result_schema;
+export const COORDINATION_RUNTIME_SHADOW_QUALIFY_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.qualify_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.qualify_result_schema;
+export const COORDINATION_RUNTIME_SHADOW_TODO_READ_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.todo_read_request_schema;
+export const COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.todo_read_result_schema;
