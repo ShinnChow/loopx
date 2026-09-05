@@ -28,7 +28,10 @@ def test_snapshot_pagination_is_bounded_and_stable():
 
 def test_cursor_scope_expiry_and_capacity():
     pages = CompletedTodoPages()
-    load = lambda: [{}] * 41
+
+    def load():
+        return [{}] * 41
+
     cursor = pages.page(scope="a", cursor="", load=load)["next_cursor"]
     with pytest.raises(ValueError, match="expired"):
         pages.page(scope="b", cursor=cursor, load=load)
