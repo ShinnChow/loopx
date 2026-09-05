@@ -42,6 +42,45 @@ CLI lifecycle cutover。
 输出 v0；本 PR 不改写已存 head，也不自动晋升 goal。schema 分层不等于允许后续迁移
 丢失 v0 provenance 或改变旧排序。
 
+### 交付语义：先修正规则，再迁移
+
+交付历史边界将 `classification`、`health_check` 与 `recommended_action` 视为
+叙述文本。它们不能生成或解除 follow-through obligation，不能证明 outcome，也
+不能判定交付规模。例如，`unblocked after dependency update` 不构成 blocker
+receipt，`implemented network protocol parser` 不构成仅完成准备工作的证据。
+
+规则继续由 `control_plane/work_items/delivery_outcome.py`、`delivery_signals.py`
+和 `outcome_followthrough.py` 持有。本批在既有 owner 中完成正确性前置修复，不新增
+capability/provider，也不宣称完成 TypeScript 事务迁移。删除关键词推断与 status
+常量，不增加 runtime crossing、schema 或 service；复用已有 typed blocker
+settlement 判定，不复制证据绑定规则。
+
+验收不变量是**叙述非干涉**：固定 typed fields 与配置，改写叙述或增加未经验证的
+`compact_evidence` / `case_result` 对象，都不能改变交付语义与后续执行义务。
+classification 保留为历史标签；没有明确展示消费者时，不保留旧预测逻辑。
+
+- 合法的显式 outcome、turn kind 和 scale 保持原有语义。显式 blocker kind
+  继续可读。带作用域的 typed blocked observation 必须通过既有 work-item/evidence
+  绑定检查，才能将 gap 判定为 blocker writeback；只有 `outcome_gap` 不够。
+- 历史字段缺失或不受支持时保持 unknown。unknown 中断连续小规模／outcome-gap
+  证据计数，不视为成功或推断出的失败。未配置 floor 且没有 outcome 时，保留
+  `not_configured` 展示哨兵值。
+- 新交付声明通过现有 writer API 写显式 enum，例如
+  `refresh-state --delivery-outcome ... --delivery-batch-scale ...`。
+  纯状态刷新仍可不声明交付；本批不强迫每次刷新声明进展。既有写入 enum 校验、
+  settlement evidence、quota 和 gate 检查继续有效。
+- 旧 outcome-marker/hint 配置继续可读，并保留 floor 是否配置的含义；配置中的
+  词语不再分类 run。不改写持久历史，也不新增开关恢复错误行为。此前由未结构化
+  历史标签推导的 status、handoff/review 和 quota 决策会发生明确的行为变化。
+
+交付领域的迁移单元是完整的 delivery-history-to-obligation projection，包含规模／结果
+连续计数与 status/quota 消费者。这定义该领域的切片边界，不改变下文 provider-first
+Todo 的交付顺序。每批有界历史最多跨 runtime 一次，删除被替代的
+Python decision，保留独立审阅的 typed case，并通过真实 CLI 验证叙述变异用例。
+旧推断本身错误，因此只有传输 golden parity 不够。另行盘点仍缺少 material-result
+字段的 writer，并用明确兼容计划退役旧 marker/hint 配置。本批不迁移精确的旧
+lifecycle classification code 或其他 cadence policy，不能宣称全局已无文本规则。
+
 ### 下一步交付顺序
 
 1. **一组 provider-first Todo 完整事务。** 原生 create、claim、update、
