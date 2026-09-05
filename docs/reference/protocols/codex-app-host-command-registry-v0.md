@@ -212,7 +212,8 @@ the sender must relay the required context explicitly.
 
 For same-project context sharing, the parsed locator also returns a
 provider-neutral `context_scope_ref`. An explicitly enabled Decision Context
-extension may use that scope for bounded advisory recall. The bundled
+extension may use that scope as a one-off `recall-context` argument for bounded
+advisory recall without modifying its persistent profile. The bundled
 `loopx-obelisk` package is one optional provider; another harness adapter may
 implement the same protocol. Provider output remains transient and fail-open.
 Authoritative alignment outranks chat, and durable conclusions remain owned by

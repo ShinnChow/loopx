@@ -149,6 +149,29 @@ loopx decision-context source-manifest \
   --format json
 ```
 
+Recall one task or other provider scope without modifying the profile or
+entering the evidence-settlement workflow:
+
+```bash
+loopx decision-context recall-context \
+  --goal-id <goal-id> \
+  --agent-id <agent-id> \
+  --profile <ignored-private-profile.json> \
+  --context-scope-ref 'host-session:codex:<thread-id>' \
+  --query '<specific private provider query>' \
+  --query-summary '<public-safe intent summary>' \
+  --format json
+```
+
+The profile still gates the Goal, Agent, and provider, but the one-off scope is
+not persisted. The command does not scan authority sources, read or write
+cursors, create pending settlement, or grant execution authority. Its top-level
+output is explicitly `local_private_transient` because it contains the recalled
+text for the current agent. The nested retrieval receipt is public-safe and
+retains only the query summary, provider-safe summaries, scores, and hashed
+references. Each recalled item is marked `untrusted_advisory` and must never be
+treated as an instruction.
+
 Run bounded scans and exact reads without committing private cursors:
 
 ```bash

@@ -173,7 +173,7 @@ This is an optional, transient **advisory context input**. It remains outside
 host task deep link -> project-local binding -> normalized host-session scope
         | explicitly configured, read-only ContextProvider
         v
-Decision Context evidence rebase against current authority sources
+local-private transient recall -> verify against current authority sources
         | explicit promotion to durable typed evidence
         | base Goal revision + intent digest
         v

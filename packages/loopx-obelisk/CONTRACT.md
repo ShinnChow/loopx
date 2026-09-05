@@ -22,7 +22,9 @@ The extension returns one
 item has a provider-private `resource_ref`, a public-safe generic `summary`,
 transient `content`, and an optional numeric `score`. Core validates the
 allowlist and bounds before creating `ContextProviderRetrieval`; its public
-packet hashes the resource reference and omits content.
+receipt hashes the resource reference and omits content. An explicit one-off
+recall may return the content only in a local-private transient CLI packet; it
+does not persist the scope, query, or content.
 
 `status=completed` may contain zero items. `status=unavailable` contains no
 items and carries a compact `reason_code`. Process failure or an invalid

@@ -131,6 +131,27 @@ loopx decision-context source-manifest \
   --format json
 ```
 
+一次性召回某个 task 或其他 provider scope，且不修改 profile、也不进入
+evidence settlement 流程：
+
+```bash
+loopx decision-context recall-context \
+  --goal-id <goal-id> \
+  --agent-id <agent-id> \
+  --profile <ignored-private-profile.json> \
+  --context-scope-ref 'host-session:codex:<thread-id>' \
+  --query '<发送给 provider 的具体私有查询>' \
+  --query-summary '<公开安全的查询意图摘要>' \
+  --format json
+```
+
+Profile 仍负责 Goal、Agent 与 provider activation gate，但本次 scope 不落盘。
+该命令不扫描 authority source、不读写 cursor、不创建 pending settlement，也不授予
+execution authority。顶层输出显式标记为 `local_private_transient`，因为其中包含供当前
+Agent 使用的召回原文；嵌套 retrieval receipt 保持 public-safe，只保留查询摘要、
+provider-safe 摘要、分数与哈希引用。每个召回 item 都标记为
+`untrusted_advisory`，不得当作指令执行。
+
 执行有界 scan 和 exact read，但不提交私有 cursor：
 
 ```bash
