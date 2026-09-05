@@ -1755,6 +1755,7 @@ export function PersonalWorkspacePage({
             ) : null}
             {selectedGoal && selectedGoalTab === "tasks" ? (
               <GoalTasksView
+                historyEnabled={!readOnly}
                 goal={selectedGoal}
                 items={items}
                 onDraftTaskFromMessage={readOnly ? undefined : (reply) => {
