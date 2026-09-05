@@ -21,6 +21,7 @@ from loopx.control_plane.coordination.coordination_state_contract_generated impo
     LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA,
     LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA,
     LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+    LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA,
 )
 from loopx.control_plane.coordination.local_authority_shadow_adapter import (
     LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA as BRIDGE_SHADOW_EVIDENCE_SCHEMA,
@@ -31,6 +32,9 @@ from loopx.control_plane.coordination.local_authority_shadow_outbox import (
 )
 from loopx.control_plane.coordination.runtime_shadow import (
     build_todo_runtime_shadow_projection,
+)
+from loopx.control_plane.coordination.legacy_writer_fence import (
+    LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA as BRIDGE_WRITE_CHECK_REQUEST_SCHEMA,
 )
 from loopx.control_plane.coordination.local_authority import (
     LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as BRIDGE_LIST_REQUEST_SCHEMA,
@@ -149,6 +153,7 @@ def test_python_shadow_bridges_use_generated_protocol_schemas() -> None:
         ]
         == "loopx_coordination_runtime_shadow_projection_v0"
     )
+    assert BRIDGE_WRITE_CHECK_REQUEST_SCHEMA == LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA
 
 
 def test_record_validation_rejects_required_fields_outside_declared_fields() -> None:

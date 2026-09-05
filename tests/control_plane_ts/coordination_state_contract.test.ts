@@ -18,6 +18,7 @@ import {
   LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA as GENERATED_SHADOW_OUTBOX_ENTRY_SCHEMA,
   LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA as GENERATED_SHADOW_REQUEST_SCHEMA,
   LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as GENERATED_LIST_REQUEST_SCHEMA,
+  LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA as GENERATED_WRITE_CHECK_REQUEST_SCHEMA,
 } from "../../loopx/control_plane/coordination/coordination_state_contract.generated.ts";
 import {
   LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA as RUNTIME_SHADOW_EVIDENCE_SCHEMA,
@@ -26,6 +27,9 @@ import {
 import {
   LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA as RUNTIME_SHADOW_OUTBOX_ENTRY_SCHEMA,
 } from "../../loopx/control_plane/coordination/local_authority_shadow_outbox.ts";
+import {
+  LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA as RUNTIME_WRITE_CHECK_REQUEST_SCHEMA,
+} from "../../loopx/control_plane/coordination/legacy_writer_fence.ts";
 import {
   LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as RUNTIME_LIST_REQUEST_SCHEMA,
 } from "../../loopx/control_plane/coordination/local_authority_runtime.ts";
@@ -95,6 +99,10 @@ test("TypeScript shadow runtimes re-export generated protocol schemas", () => {
   assert.equal(RUNTIME_SHADOW_REQUEST_SCHEMA, GENERATED_SHADOW_REQUEST_SCHEMA);
   assert.equal(RUNTIME_SHADOW_EVIDENCE_SCHEMA, GENERATED_SHADOW_EVIDENCE_SCHEMA);
   assert.equal(RUNTIME_SHADOW_OUTBOX_ENTRY_SCHEMA, GENERATED_SHADOW_OUTBOX_ENTRY_SCHEMA);
+});
+
+test("TypeScript writer fence re-exports generated protocol schemas", () => {
+  assert.equal(RUNTIME_WRITE_CHECK_REQUEST_SCHEMA, GENERATED_WRITE_CHECK_REQUEST_SCHEMA);
 });
 
 test("provider-bound Todo records preserve every declared field", () => {

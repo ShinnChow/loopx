@@ -28,6 +28,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "local_authority_protocol",
     "runtime_shadow_protocol",
     "local_authority_shadow_protocol",
+    "legacy_writer_fence_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -85,6 +86,20 @@ LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS = (
     "transaction_receipt_schema",
     "transaction_evidence_schema",
 )
+LEGACY_WRITER_FENCE_PROTOCOL_KEYS = (
+    "fence_schema",
+    "engage_request_schema",
+    "result_schema",
+    "write_check_request_schema",
+    "write_check_result_schema",
+)
+LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
+    "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
+    "engage_request_schema": "LEGACY_COORDINATION_WRITER_FENCE_ENGAGE_REQUEST_SCHEMA",
+    "result_schema": "LEGACY_COORDINATION_WRITER_FENCE_RESULT_SCHEMA",
+    "write_check_request_schema": "LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA",
+    "write_check_result_schema": "LEGACY_COORDINATION_WRITE_CHECK_RESULT_SCHEMA",
+}
 
 
 def _string_list(value: object, *, label: str) -> list[str]:
@@ -159,6 +174,19 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("local authority shadow protocol schemas must be non-empty strings")
     if len(set(local_shadow.values())) != len(local_shadow):
         raise ValueError("local authority shadow protocol schemas must be unique")
+    writer_fence = raw.get("legacy_writer_fence_protocol")
+    if (
+        not isinstance(writer_fence, dict)
+        or tuple(writer_fence) != LEGACY_WRITER_FENCE_PROTOCOL_KEYS
+    ):
+        raise ValueError("legacy writer fence protocol has unexpected fields or order")
+    if any(
+        not isinstance(writer_fence.get(key), str) or not writer_fence[key]
+        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
+    ):
+        raise ValueError("legacy writer fence protocol schemas must be non-empty strings")
+    if len(set(writer_fence.values())) != len(writer_fence):
+        raise ValueError("legacy writer fence protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -202,6 +230,12 @@ def render_python(contract: dict[str, Any]) -> str:
         f"LOCAL_AUTHORITY_SHADOW_{key.upper()}: Final[str] = {local_shadow[key]!r}"
         for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
     )
+    writer_fence = contract["legacy_writer_fence_protocol"]
+    writer_fence_constants = "\n".join(
+        f"{LEGACY_WRITER_FENCE_CONSTANT_NAMES[key]}: Final[str] = "
+        f"{writer_fence[key]!r}"
+        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -216,7 +250,8 @@ def render_python(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
         f"{local_constants}\n\n"
         f"{shadow_constants}\n\n"
-        f"{local_shadow_constants}\n"
+        f"{local_shadow_constants}\n\n"
+        f"{writer_fence_constants}\n"
     )
 
 
@@ -237,6 +272,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.{key};"
         for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
     )
+    writer_fence_constants = "\n".join(
+        f"export const {LEGACY_WRITER_FENCE_CONSTANT_NAMES[key]} = "
+        f"COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.{key};"
+        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -249,7 +289,8 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
         f"{local_constants}\n\n"
         f"{shadow_constants}\n\n"
-        f"{local_shadow_constants}\n"
+        f"{local_shadow_constants}\n\n"
+        f"{writer_fence_constants}\n"
     )
 
 

@@ -160,6 +160,13 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "transaction_receipt_schema": "loopx_coordination_runtime_shadow_outbox_receipt_v0",
     "transaction_evidence_schema": "loopx_local_authority_shadow_evidence_v1"
   },
+  "legacy_writer_fence_protocol": {
+    "fence_schema": "loopx_legacy_coordination_writer_fence_v0",
+    "engage_request_schema": "loopx_legacy_coordination_writer_fence_engage_request_v0",
+    "result_schema": "loopx_legacy_coordination_writer_fence_result_v0",
+    "write_check_request_schema": "loopx_legacy_coordination_write_check_request_v0",
+    "write_check_result_schema": "loopx_legacy_coordination_write_check_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -207,3 +214,9 @@ export const LOCAL_AUTHORITY_SHADOW_READ_RESULT_SCHEMA = COORDINATION_STATE_CONT
 export const LOCAL_AUTHORITY_SHADOW_EVENT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.event_schema;
 export const LOCAL_AUTHORITY_SHADOW_TRANSACTION_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.transaction_receipt_schema;
 export const LOCAL_AUTHORITY_SHADOW_TRANSACTION_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.transaction_evidence_schema;
+
+export const LEGACY_COORDINATION_WRITER_FENCE_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.fence_schema;
+export const LEGACY_COORDINATION_WRITER_FENCE_ENGAGE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.engage_request_schema;
+export const LEGACY_COORDINATION_WRITER_FENCE_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.result_schema;
+export const LEGACY_COORDINATION_WRITE_CHECK_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.write_check_request_schema;
+export const LEGACY_COORDINATION_WRITE_CHECK_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.write_check_result_schema;

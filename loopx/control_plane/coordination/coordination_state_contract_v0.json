@@ -139,6 +139,13 @@
     "transaction_receipt_schema": "loopx_coordination_runtime_shadow_outbox_receipt_v0",
     "transaction_evidence_schema": "loopx_local_authority_shadow_evidence_v1"
   },
+  "legacy_writer_fence_protocol": {
+    "fence_schema": "loopx_legacy_coordination_writer_fence_v0",
+    "engage_request_schema": "loopx_legacy_coordination_writer_fence_engage_request_v0",
+    "result_schema": "loopx_legacy_coordination_writer_fence_result_v0",
+    "write_check_request_schema": "loopx_legacy_coordination_write_check_request_v0",
+    "write_check_result_schema": "loopx_legacy_coordination_write_check_result_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
