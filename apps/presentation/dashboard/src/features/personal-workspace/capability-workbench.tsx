@@ -1,10 +1,46 @@
-import { SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import type { CapabilityConfigurationCatalog } from "../../data/chat";
 import type { WorkspaceLocale, WorkspaceTranslate } from "./i18n";
 import { localizeCapability } from "./capability-localization";
 
 type CapabilityDescriptor = CapabilityConfigurationCatalog["capabilities"][number];
+
+export function canEditCapability(capability: CapabilityDescriptor, scope: "goal" | "machine") {
+  return capability.available_scopes.includes(scope)
+    && (scope !== "machine" || Boolean(capability.machine_namespace))
+    && capability.configuration_editor.editable
+    && capability.configuration_editor.writable_scopes.includes(scope);
+}
+
+export function CapabilityConfigurationSummary({ values, source, t }: Readonly<{
+  values: ReadonlyArray<{ label: string; value: Record<string, unknown> | undefined }>;
+  source?: NonNullable<CapabilityDescriptor["effective_configuration"]>["source"];
+  t: WorkspaceTranslate;
+}>) {
+  return <>
+    <div className="personal-capability-value-grid">
+      {values.map(({ label, value }) => <section key={label}>
+        <strong>{label}</strong><pre>{value ? JSON.stringify(value, null, 2) : "—"}</pre>
+      </section>)}
+    </div>
+    {source ? <p className="personal-capability-effective-source">
+      <ShieldCheck aria-hidden size={15} />
+      <span><strong>{t("capabilities.effectiveSource")}</strong>{t(`capabilities.source.${source}`)}</span>
+    </p> : null}
+  </>;
+}
+
+export function CapabilityEditorStatus({ available, description, t }: Readonly<{
+  available: boolean;
+  description: string;
+  t: WorkspaceTranslate;
+}>) {
+  return <section className={`personal-capability-editor-status ${available ? "is-preview" : "is-read-only"}`}>
+    {available ? <ShieldCheck aria-hidden size={18} /> : <AlertTriangle aria-hidden size={18} />}
+    <div><strong>{t(available ? "capabilities.editorPrepared" : "capabilities.readOnly")}</strong><p>{description}</p></div>
+  </section>;
+}
 
 function capabilityPresentationTier(capability: CapabilityDescriptor) {
   if (capability.availability?.includes("experimental")) return 4;
@@ -59,7 +95,9 @@ export function CapabilityCatalogNavigation({
               <strong>{capability.display_name}</strong>
               <small>{capability.capability_id}</small>
             </span>
-            <em>{t(scope === "goal" ? "capabilities.goalScope" : "capabilities.machineScope")}</em>
+            <em>{t(capability.available_scopes.includes(scope)
+              ? scope === "goal" ? "capabilities.goalScope" : "capabilities.machineScope"
+              : scope === "machine" ? "capabilities.goalScope" : "capabilities.machineScope")}</em>
           </button>
         );
       })}

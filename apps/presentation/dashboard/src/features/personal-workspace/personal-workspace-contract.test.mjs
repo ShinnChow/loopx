@@ -110,7 +110,12 @@ assert.match(header, /personal-goal-tools-trigger/, "Goal details and capability
 assert.match(header, /onOpenGoalDetail[\s\S]*onOpenGoalCapabilities/, "The unified Goal entry preserves both existing details and capability settings");
 assert.match(page, /onOpenGoalCapabilities=.*tab: "capabilities"/, "The unified Goal entry opens the selected Goal capability settings directly");
 assert.match(goalCapabilitySettings, /fetchGoalConfiguration\(goalId\)/, "Goal capability settings inspect the selected Goal through the path-free API");
-assert.match(goalCapabilitySettings, /personal-capability-editor-status/, "Goal capability settings distinguish editable contracts from read-only capabilities");
+assert.match(capabilityWorkbench, /personal-capability-editor-status/, "Shared capability details distinguish editable contracts from read-only capabilities");
+for (const settings of [goalCapabilitySettings, machineSettings]) {
+  assert.match(settings, /<CapabilityEditorStatus/, "Both scopes use the shared editor status");
+  assert.match(settings, /<CapabilityConfigurationSummary/, "Both scopes use the shared value and provenance view");
+  assert.match(settings, /canEditCapability\(/, "Both scopes enforce the same editor availability contract");
+}
 assert.match(goalCapabilitySettings, /previewGoalConfiguration\(goalId/, "Goal capability changes start with a typed preview");
 assert.match(goalCapabilitySettings, /preview\.plan_revision/, "Goal capability apply is locked to the reviewed plan revision");
 assert.match(goalCapabilitySettings, /applyGoalConfiguration\(/, "Goal capability settings apply only through the revision-locked API");

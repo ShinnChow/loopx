@@ -653,7 +653,9 @@ async function installApi(page, { goalSubagentConfigurationEnabled = true } = {}
       },
       capability_catalog: {
         schema_version: "capability_configuration_catalog_v0",
-        capabilities: [periodicReportCapability({ machineCurrent: periodicConfiguration })],
+        capabilities: goalCapabilityCatalog().map((capability) => capability.capability_id === "periodic_report"
+          ? periodicReportCapability({ machineCurrent: periodicConfiguration })
+          : capability),
       },
       changed_namespaces: [],
       machine_configuration: {
@@ -2007,6 +2009,20 @@ async function main() {
     await page.getByRole("button", { name: /机器配置/ }).click();
     await page.getByRole("heading", { level: 1, name: "机器配置", exact: true }).waitFor({ state: "visible" });
     await page.getByRole("heading", { level: 2, name: "周期报告", exact: true }).waitFor({ state: "visible" });
+    const machineCatalog = page.getByRole("navigation", { name: "机器能力目录" });
+    if (await machineCatalog.getByRole("button").count() !== goalCapabilityCatalog().length) {
+      throw new Error("Machine settings hid Goal-only capabilities from the shared catalog");
+    }
+    const requestsBeforeReadOnly = api.machineConfigurationRequests.length;
+    await machineCatalog.getByRole("button", { name: /multi_subagent/ }).click();
+    await page.getByText(/此能力目前仅支持 Goal 级配置/u).waitFor({ state: "visible" });
+    if (await page.getByRole("button", { name: "预览变更", exact: true }).count()
+        || await page.locator("#machine-configuration-json").count()
+        || await page.getByLabel(/^启用$/u).count()
+        || api.machineConfigurationRequests.length !== requestsBeforeReadOnly) {
+      throw new Error("Goal-only capability exposed a machine mutation path");
+    }
+    await machineCatalog.getByRole("button", { name: /periodic_report/ }).click();
     for (const label of [/^启用$/u, /^报告 Profile/u, /^Goal Channel 路由/u, /^时区/u]) {
       await page.getByLabel(label).waitFor({ state: "visible" });
     }
