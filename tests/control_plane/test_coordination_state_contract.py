@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import runpy
 import subprocess
 
 import pytest
@@ -32,6 +33,30 @@ def test_generated_coordination_bindings_are_current() -> None:
         cwd=ROOT,
         check=True,
     )
+
+
+@pytest.mark.parametrize(
+    ("source_family", "source_key", "message"),
+    [
+        ("local_authority_protocol", "mutation_request_schema", "across families"),
+        ("local_authority_protocol", "promotion_receipt_schema", "across families"),
+        ("runtime_shadow_protocol", "inspect_request_schema", "must be unique"),
+    ],
+)
+def test_generator_rejects_protocol_identity_collisions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    source_family: str, source_key: str, message: str,
+) -> None:
+    generator = runpy.run_path(str(ROOT / "scripts/generate_coordination_state_contract.py"))
+    contract = json.loads(generator["CONTRACT_PATH"].read_text(encoding="utf-8"))
+    contract["runtime_shadow_protocol"]["commit_request_schema"] = contract[source_family][source_key]
+    source = tmp_path / "contract.json"
+    source.write_text(json.dumps(contract), encoding="utf-8")
+    load_contract = generator["load_contract"]
+    monkeypatch.setitem(load_contract.__globals__, "CONTRACT_PATH", source)
+
+    with pytest.raises(ValueError, match=message):
+        load_contract()
 
 
 def test_python_binding_equals_language_neutral_contract() -> None:
