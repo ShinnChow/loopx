@@ -175,6 +175,10 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
                           'evaluation_result_schema': 'todo_resume_evaluation_v0',
                           'external_wait_request_schema': 'todo_external_wait_request_v0',
                           'external_wait_result_schema': 'todo_external_wait_transition_v0'},
+ 'replan_settlement_protocol': {'request_schema': 'loopx_replan_settlement_request_v0',
+                                'result_schema': 'replan_settlement_contract_v0',
+                                'lifecycle_reentry_request_schema': 'loopx_todo_lifecycle_reentry_request_v0',
+                                'lifecycle_reentry_result_schema': 'todo_lifecycle_settlement_reentry_v0'},
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
                    'markdown_role': 'human_workbench_and_compatibility_projection'}})
@@ -261,3 +265,8 @@ TODO_RESUME_EVALUATION_REQUEST_SCHEMA: Final[str] = 'todo_resume_evaluation_requ
 TODO_RESUME_EVALUATION_RESULT_SCHEMA: Final[str] = 'todo_resume_evaluation_v0'
 TODO_RESUME_EXTERNAL_WAIT_REQUEST_SCHEMA: Final[str] = 'todo_external_wait_request_v0'
 TODO_RESUME_EXTERNAL_WAIT_RESULT_SCHEMA: Final[str] = 'todo_external_wait_transition_v0'
+
+REPLAN_SETTLEMENT_REQUEST_SCHEMA: Final[str] = 'loopx_replan_settlement_request_v0'
+REPLAN_SETTLEMENT_RESULT_SCHEMA: Final[str] = 'replan_settlement_contract_v0'
+REPLAN_SETTLEMENT_LIFECYCLE_REENTRY_REQUEST_SCHEMA: Final[str] = 'loopx_todo_lifecycle_reentry_request_v0'
+REPLAN_SETTLEMENT_LIFECYCLE_REENTRY_RESULT_SCHEMA: Final[str] = 'todo_lifecycle_settlement_reentry_v0'

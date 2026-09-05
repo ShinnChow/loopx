@@ -35,6 +35,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "capability_hook_protocol",
     "action_portfolio_protocol",
     "todo_resume_protocol",
+    "replan_settlement_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -140,6 +141,12 @@ TODO_RESUME_PROTOCOL_KEYS = (
     "evaluation_result_schema",
     "external_wait_request_schema",
     "external_wait_result_schema",
+)
+REPLAN_SETTLEMENT_PROTOCOL_KEYS = (
+    "request_schema",
+    "result_schema",
+    "lifecycle_reentry_request_schema",
+    "lifecycle_reentry_result_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -309,6 +316,19 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("Todo resume protocol schemas must be non-empty strings")
     if len(set(todo_resume.values())) != len(todo_resume):
         raise ValueError("Todo resume protocol schemas must be unique")
+    replan_settlement = raw.get("replan_settlement_protocol")
+    if (
+        not isinstance(replan_settlement, dict)
+        or tuple(replan_settlement) != REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    ):
+        raise ValueError("replan settlement protocol has unexpected fields or order")
+    if any(
+        not isinstance(replan_settlement.get(key), str) or not replan_settlement[key]
+        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    ):
+        raise ValueError("replan settlement protocol schemas must be non-empty strings")
+    if len(set(replan_settlement.values())) != len(replan_settlement):
+        raise ValueError("replan settlement protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -388,6 +408,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"TODO_RESUME_{key.upper()}: Final[str] = {todo_resume[key]!r}"
         for key in TODO_RESUME_PROTOCOL_KEYS
     )
+    replan_settlement = contract["replan_settlement_protocol"]
+    replan_settlement_constants = "\n".join(
+        f"REPLAN_SETTLEMENT_{key.upper()}: Final[str] = {replan_settlement[key]!r}"
+        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -410,6 +435,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"
         f"\n{todo_resume_constants}\n"
+        f"\n{replan_settlement_constants}\n"
     )
 
 
@@ -465,6 +491,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.todo_resume_protocol.{key};"
         for key in TODO_RESUME_PROTOCOL_KEYS
     )
+    replan_settlement_constants = "\n".join(
+        f"export const REPLAN_SETTLEMENT_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.replan_settlement_protocol.{key};"
+        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -485,6 +516,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"
         f"\n{todo_resume_constants}\n"
+        f"\n{replan_settlement_constants}\n"
     )
 
 
