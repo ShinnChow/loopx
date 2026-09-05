@@ -172,6 +172,17 @@ retains only the query summary, provider-safe summaries, scores, and hashed
 references. Each recalled item is marked `untrusted_advisory` and must never be
 treated as an instruction.
 
+Keeping this profile enabled does not make Obelisk a required LoopX
+dependency. If the selected extension is not installed, is disabled, or no
+longer has a current doctor proof, recall exits normally with
+`status=unavailable`, a typed `provider_readiness` receipt, and no provider
+scan or write. Do not remove or rewrite the profile just to recover the
+provider: install it, run
+`loopx extension enable <extension-id> --execute --format json`, or run
+`loopx extension doctor <extension-id> --execute --format json` according to
+`provider_readiness.next_action`. The next recall re-resolves lifecycle state
+and resumes automatically when the provider is ready.
+
 Run bounded scans and exact reads without committing private cursors:
 
 ```bash

@@ -152,6 +152,15 @@ Agent 使用的召回原文；嵌套 retrieval receipt 保持 public-safe，只�
 provider-safe 摘要、分数与哈希引用。每个召回 item 都标记为
 `untrusted_advisory`，不得当作指令执行。
 
+保持该 profile 启用，并不意味着 Obelisk 会变成 LoopX 的必需依赖。如果指定的
+extension 尚未安装、已禁用，或缺少当前有效的 doctor 证明，召回仍会正常退出，
+返回 `status=unavailable` 和类型化的 `provider_readiness` 回执，并且不会执行
+provider scan 或写入。恢复时无需删除或改写 profile：根据
+`provider_readiness.next_action` 安装 provider，执行
+`loopx extension enable <extension-id> --execute --format json`，或执行
+`loopx extension doctor <extension-id> --execute --format json`。下一次召回会重新解析
+extension lifecycle state，并在 provider ready 后自动恢复。
+
 执行有界 scan 和 exact read，但不提交私有 cursor：
 
 ```bash

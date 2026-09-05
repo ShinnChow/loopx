@@ -67,6 +67,39 @@ loopx extension doctor loopx-obelisk --execute --format json
 never launches it implicitly; rerun it when newly completed task history needs
 to become searchable.
 
+The Decision Context profile may be enabled before this optional package is
+installed. Missing, disabled, or stale-doctor provider state does not make
+`recall-context` fail as a command: it returns `status=unavailable` plus a
+typed `provider_readiness` receipt, performs no provider scan or write, and
+leaves the profile unchanged. Recover according to the receipt:
+
+```bash
+# provider distribution or lifecycle registration is missing
+python3 -m pip install packages/loopx-obelisk
+loopx extension install \
+  --manifest packages/loopx-obelisk/extension.toml \
+  --execute --format json
+
+# lifecycle registration exists but is disabled
+loopx extension enable loopx-obelisk --execute --format json
+
+# the enabled registration has no current doctor proof
+loopx extension doctor loopx-obelisk --execute --format json
+```
+
+If doctor reports that the Obelisk CLI or index is unavailable, install the
+CLI and explicitly build the owner-local index before running doctor again:
+
+```bash
+npm install --global @obelisk-apps/cli
+obelisk --build
+loopx extension doctor loopx-obelisk --execute --format json
+```
+
+No profile edit is needed after repair; each recall resolves current extension
+lifecycle state. LoopX never installs Obelisk or runs `obelisk --build` on the
+owner's behalf.
+
 If the project uses a non-default LoopX runtime root, pass the same global
 `--runtime-root <path>` option to the extension lifecycle commands and the
 Decision Context command. The provider is resolved from that exact lifecycle
