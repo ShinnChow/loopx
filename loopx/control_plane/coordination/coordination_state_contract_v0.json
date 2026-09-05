@@ -160,6 +160,12 @@
     "settlement_requirement_schema": "settlement_workspace_requirement_v0",
     "legacy_receipt_evidence_schema": "legacy_settlement_receipt_evidence_v0"
   },
+  "delivery_workspace_snapshot_protocol": {
+    "snapshot_schema": "delivery_workspace_v1",
+    "legacy_snapshot_schema": "delivery_workspace_v0",
+    "request_schema": "loopx_delivery_workspace_request_v0",
+    "result_schema": "loopx_delivery_workspace_result_v0"
+  },
   "task_lease_protocol": {
     "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
     "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"

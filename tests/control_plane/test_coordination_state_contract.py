@@ -7,6 +7,7 @@ import subprocess
 
 import pytest
 
+from loopx.control_plane.agents import delivery_workspace
 from loopx.control_plane.coordination.coordination_state_contract import (
     CoordinationStateContractError,
     TODO_CANONICAL_READ_RECORD_FIELDS,
@@ -21,6 +22,10 @@ from loopx.control_plane.coordination.coordination_state_contract_generated impo
     DELIVERY_CONTINUITY_RESULT_SCHEMA,
     DELIVERY_ROUTING_REQUEST_SCHEMA,
     DELIVERY_ROUTING_RESULT_SCHEMA,
+    DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA,
+    DELIVERY_WORKSPACE_SNAPSHOT_REQUEST_SCHEMA,
+    DELIVERY_WORKSPACE_SNAPSHOT_RESULT_SCHEMA,
+    DELIVERY_WORKSPACE_SNAPSHOT_SNAPSHOT_SCHEMA,
     LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA,
     LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA,
     LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA,
@@ -166,6 +171,25 @@ def test_python_delivery_continuity_uses_generated_protocol_schemas() -> None:
     assert delivery_continuity.DELIVERY_BOUNDARY_RESULT_SCHEMA == DELIVERY_BOUNDARY_RESULT_SCHEMA
     assert delivery_continuity.DELIVERY_ROUTING_REQUEST_SCHEMA == DELIVERY_ROUTING_REQUEST_SCHEMA
     assert delivery_continuity.DELIVERY_ROUTING_RESULT_SCHEMA == DELIVERY_ROUTING_RESULT_SCHEMA
+
+
+def test_python_delivery_workspace_uses_generated_protocol_schemas() -> None:
+    assert (
+        delivery_workspace.DELIVERY_WORKSPACE_SCHEMA_VERSION
+        == DELIVERY_WORKSPACE_SNAPSHOT_SNAPSHOT_SCHEMA
+    )
+    assert (
+        delivery_workspace.LEGACY_DELIVERY_WORKSPACE_SCHEMA_VERSION
+        == DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA
+    )
+    assert (
+        delivery_workspace.DELIVERY_WORKSPACE_REQUEST_SCHEMA
+        == DELIVERY_WORKSPACE_SNAPSHOT_REQUEST_SCHEMA
+    )
+    assert (
+        delivery_workspace.DELIVERY_WORKSPACE_RESULT_SCHEMA
+        == DELIVERY_WORKSPACE_SNAPSHOT_RESULT_SCHEMA
+    )
 
 
 def test_record_validation_rejects_required_fields_outside_declared_fields() -> None:

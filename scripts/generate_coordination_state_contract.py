@@ -31,6 +31,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "legacy_writer_fence_protocol",
     "delivery_continuity_protocol",
     "delivery_workspace_protocol",
+    "delivery_workspace_snapshot_protocol",
     "task_lease_protocol",
     "capability_hook_protocol",
     "action_portfolio_protocol",
@@ -113,6 +114,12 @@ DELIVERY_WORKSPACE_PROTOCOL_KEYS = (
     "resolution_schema",
     "settlement_requirement_schema",
     "legacy_receipt_evidence_schema",
+)
+DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS = (
+    "snapshot_schema",
+    "legacy_snapshot_schema",
+    "request_schema",
+    "result_schema",
 )
 TASK_LEASE_PROTOCOL_KEYS = (
     "acquire_request_schema",
@@ -270,6 +277,27 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("delivery workspace protocol schemas must be non-empty strings")
     if len(set(delivery_workspace.values())) != len(delivery_workspace):
         raise ValueError("delivery workspace protocol schemas must be unique")
+    delivery_workspace_snapshot = raw.get("delivery_workspace_snapshot_protocol")
+    if (
+        not isinstance(delivery_workspace_snapshot, dict)
+        or tuple(delivery_workspace_snapshot)
+        != DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
+    ):
+        raise ValueError(
+            "delivery workspace snapshot protocol has unexpected fields or order"
+        )
+    if any(
+        not isinstance(delivery_workspace_snapshot.get(key), str)
+        or not delivery_workspace_snapshot[key]
+        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
+    ):
+        raise ValueError(
+            "delivery workspace snapshot protocol schemas must be non-empty strings"
+        )
+    if len(set(delivery_workspace_snapshot.values())) != len(
+        delivery_workspace_snapshot
+    ):
+        raise ValueError("delivery workspace snapshot protocol schemas must be unique")
     task_lease = raw.get("task_lease_protocol")
     if not isinstance(task_lease, dict) or tuple(task_lease) != TASK_LEASE_PROTOCOL_KEYS:
         raise ValueError("task lease protocol has unexpected fields or order")
@@ -388,6 +416,12 @@ def render_python(contract: dict[str, Any]) -> str:
         f"DELIVERY_WORKSPACE_{key.upper()}: Final[str] = {delivery_workspace[key]!r}"
         for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
     )
+    delivery_workspace_snapshot = contract["delivery_workspace_snapshot_protocol"]
+    delivery_workspace_snapshot_constants = "\n".join(
+        f"DELIVERY_WORKSPACE_SNAPSHOT_{key.upper()}: Final[str] = "
+        f"{delivery_workspace_snapshot[key]!r}"
+        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
+    )
     task_lease = contract["task_lease_protocol"]
     task_lease_constants = "\n".join(
         f"TASK_LEASE_{key.upper()}: Final[str] = {task_lease[key]!r}"
@@ -431,6 +465,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
         f"\n{delivery_workspace_constants}\n"
+        f"\n{delivery_workspace_snapshot_constants}\n"
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"
@@ -470,6 +505,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"export const DELIVERY_WORKSPACE_{key.upper()} = "
         f"COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.{key};"
         for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
+    )
+    delivery_workspace_snapshot_constants = "\n".join(
+        f"export const DELIVERY_WORKSPACE_SNAPSHOT_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.{key};"
+        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
     )
     task_lease_constants = "\n".join(
         f"export const TASK_LEASE_{key.upper()} = "
@@ -512,6 +552,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
         f"\n{delivery_workspace_constants}\n"
+        f"\n{delivery_workspace_snapshot_constants}\n"
         f"\n{task_lease_constants}\n"
         f"\n{capability_hook_constants}\n"
         f"\n{action_portfolio_constants}\n"

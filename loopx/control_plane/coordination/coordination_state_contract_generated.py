@@ -155,6 +155,10 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
                                  'resolution_schema': 'delivery_workspace_resolution_v0',
                                  'settlement_requirement_schema': 'settlement_workspace_requirement_v0',
                                  'legacy_receipt_evidence_schema': 'legacy_settlement_receipt_evidence_v0'},
+ 'delivery_workspace_snapshot_protocol': {'snapshot_schema': 'delivery_workspace_v1',
+                                          'legacy_snapshot_schema': 'delivery_workspace_v0',
+                                          'request_schema': 'loopx_delivery_workspace_request_v0',
+                                          'result_schema': 'loopx_delivery_workspace_result_v0'},
  'task_lease_protocol': {'acquire_request_schema': 'loopx_task_lease_acquire_native_v0',
                          'lifecycle_request_schema': 'loopx_task_lease_lifecycle_native_v0'},
  'capability_hook_protocol': {'registration_schema': 'loopx_capability_hook_registration_v0',
@@ -241,6 +245,11 @@ DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA: Final[str] = 'loopx_delivery_workspa
 DELIVERY_WORKSPACE_RESOLUTION_SCHEMA: Final[str] = 'delivery_workspace_resolution_v0'
 DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA: Final[str] = 'settlement_workspace_requirement_v0'
 DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA: Final[str] = 'legacy_settlement_receipt_evidence_v0'
+
+DELIVERY_WORKSPACE_SNAPSHOT_SNAPSHOT_SCHEMA: Final[str] = 'delivery_workspace_v1'
+DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA: Final[str] = 'delivery_workspace_v0'
+DELIVERY_WORKSPACE_SNAPSHOT_REQUEST_SCHEMA: Final[str] = 'loopx_delivery_workspace_request_v0'
+DELIVERY_WORKSPACE_SNAPSHOT_RESULT_SCHEMA: Final[str] = 'loopx_delivery_workspace_result_v0'
 
 TASK_LEASE_ACQUIRE_REQUEST_SCHEMA: Final[str] = 'loopx_task_lease_acquire_native_v0'
 TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA: Final[str] = 'loopx_task_lease_lifecycle_native_v0'

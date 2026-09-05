@@ -181,6 +181,12 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "settlement_requirement_schema": "settlement_workspace_requirement_v0",
     "legacy_receipt_evidence_schema": "legacy_settlement_receipt_evidence_v0"
   },
+  "delivery_workspace_snapshot_protocol": {
+    "snapshot_schema": "delivery_workspace_v1",
+    "legacy_snapshot_schema": "delivery_workspace_v0",
+    "request_schema": "loopx_delivery_workspace_request_v0",
+    "result_schema": "loopx_delivery_workspace_result_v0"
+  },
   "task_lease_protocol": {
     "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
     "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"
@@ -280,6 +286,11 @@ export const DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA = COORDINATION_STATE_CON
 export const DELIVERY_WORKSPACE_RESOLUTION_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.resolution_schema;
 export const DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.settlement_requirement_schema;
 export const DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.legacy_receipt_evidence_schema;
+
+export const DELIVERY_WORKSPACE_SNAPSHOT_SNAPSHOT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.snapshot_schema;
+export const DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.legacy_snapshot_schema;
+export const DELIVERY_WORKSPACE_SNAPSHOT_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.request_schema;
+export const DELIVERY_WORKSPACE_SNAPSHOT_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.result_schema;
 
 export const TASK_LEASE_ACQUIRE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.acquire_request_schema;
 export const TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.lifecycle_request_schema;
