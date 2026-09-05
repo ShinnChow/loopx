@@ -1,119 +1,23 @@
-import { readFileSync } from "node:fs";
-
 import type { JsonObject } from "../effect_program.ts";
 import {
   AuthorityStoreProtocolError,
   canonicalAuthorityObject,
 } from "./authority_store_codec.ts";
+import { COORDINATION_STATE_CONTRACT } from "./coordination_state_contract.generated.ts";
 
 export const COORDINATION_STATE_CONTRACT_SCHEMA =
   "loopx_coordination_state_contract_v0";
+
+if (COORDINATION_STATE_CONTRACT.schema_version !== COORDINATION_STATE_CONTRACT_SCHEMA) {
+  throw new AuthorityStoreProtocolError("coordination state contract schema mismatch");
+}
 
 interface RecordContract {
   readonly fields: readonly string[];
   readonly required_fields: readonly string[];
 }
 
-interface TodoRecordContract extends RecordContract {
-  readonly schema_version: string;
-  readonly item_schema_version: string;
-}
-
-interface CoordinationStateContract {
-  readonly schema_version: typeof COORDINATION_STATE_CONTRACT_SCHEMA;
-  readonly todo_read_record: TodoRecordContract;
-  readonly todo_domain_record: {
-    readonly schema_version: string;
-    readonly item_schema_version: string;
-    readonly fields_from: "todo_read_record";
-    readonly exclude_fields_from: "todo_projection_metadata";
-    readonly required_fields: readonly string[];
-  };
-  readonly todo_projection_metadata: RecordContract;
-  readonly compatibility: {
-    readonly unknown_field_policy: "reject";
-    readonly field_removal_policy: "maintainer_approval_required";
-    readonly markdown_role: "human_workbench_and_compatibility_projection";
-  };
-}
-
-function stringList(value: unknown, label: string): readonly string[] {
-  if (!Array.isArray(value) || value.length === 0 ||
-      value.some((item) => typeof item !== "string" || item.length === 0)) {
-    throw new AuthorityStoreProtocolError(`${label} must contain non-empty strings`);
-  }
-  if (new Set(value).size !== value.length) {
-    throw new AuthorityStoreProtocolError(`${label} must not contain duplicates`);
-  }
-  return Object.freeze([...value] as string[]);
-}
-
-function recordContract(value: unknown, label: string): RecordContract {
-  const record = canonicalAuthorityObject(value, label);
-  const fields = stringList(record.fields, `${label}.fields`);
-  const requiredFields = stringList(
-    record.required_fields,
-    `${label}.required_fields`,
-  );
-  const allowed = new Set(fields);
-  const unknownRequired = requiredFields.filter((field) => !allowed.has(field));
-  if (unknownRequired.length > 0) {
-    throw new AuthorityStoreProtocolError(
-      `${label}.required_fields are absent from fields: ${unknownRequired.join(", ")}`,
-    );
-  }
-  return Object.freeze({ fields, required_fields: requiredFields });
-}
-
-function loadCoordinationStateContract(): CoordinationStateContract {
-  const raw = canonicalAuthorityObject(JSON.parse(readFileSync(
-    new URL("./coordination_state_contract_v0.json", import.meta.url),
-    "utf8",
-  )), "coordination state contract");
-  if (raw.schema_version !== COORDINATION_STATE_CONTRACT_SCHEMA) {
-    throw new AuthorityStoreProtocolError("coordination state contract schema mismatch");
-  }
-  const todo = canonicalAuthorityObject(raw.todo_read_record, "todo_read_record");
-  const domain = canonicalAuthorityObject(raw.todo_domain_record, "todo_domain_record");
-  const metadata = recordContract(raw.todo_projection_metadata, "todo_projection_metadata");
-  if (typeof domain.schema_version !== "string" || !domain.schema_version ||
-      typeof domain.item_schema_version !== "string" || !domain.item_schema_version ||
-      domain.fields_from !== "todo_read_record" ||
-      domain.exclude_fields_from !== "todo_projection_metadata") {
-    throw new AuthorityStoreProtocolError("Todo domain contract mismatch");
-  }
-  const compatibility = canonicalAuthorityObject(raw.compatibility, "compatibility");
-  if (typeof todo.schema_version !== "string" ||
-      typeof todo.item_schema_version !== "string" ||
-      compatibility.unknown_field_policy !== "reject" ||
-      compatibility.field_removal_policy !== "maintainer_approval_required" ||
-      compatibility.markdown_role !== "human_workbench_and_compatibility_projection") {
-    throw new AuthorityStoreProtocolError("coordination state contract policy mismatch");
-  }
-  return Object.freeze({
-    schema_version: COORDINATION_STATE_CONTRACT_SCHEMA,
-    todo_read_record: Object.freeze({
-      ...recordContract(todo, "todo_read_record"),
-      schema_version: todo.schema_version,
-      item_schema_version: todo.item_schema_version,
-    }),
-    todo_domain_record: Object.freeze({
-      schema_version: domain.schema_version,
-      item_schema_version: domain.item_schema_version,
-      fields_from: "todo_read_record",
-      exclude_fields_from: "todo_projection_metadata",
-      required_fields: stringList(domain.required_fields, "todo_domain_record.required_fields"),
-    }),
-    todo_projection_metadata: metadata,
-    compatibility: Object.freeze({
-      unknown_field_policy: "reject",
-      field_removal_policy: "maintainer_approval_required",
-      markdown_role: "human_workbench_and_compatibility_projection",
-    }),
-  });
-}
-
-export const COORDINATION_STATE_CONTRACT = loadCoordinationStateContract();
+export { COORDINATION_STATE_CONTRACT };
 export const TODO_CANONICAL_READ_RECORD_SCHEMA =
   COORDINATION_STATE_CONTRACT.todo_read_record.schema_version;
 export const TODO_ITEM_SCHEMA =
@@ -129,11 +33,11 @@ export const TODO_DOMAIN_READ_RECORD_SCHEMA =
   COORDINATION_STATE_CONTRACT.todo_domain_record.schema_version;
 export const TODO_DOMAIN_ITEM_SCHEMA =
   COORDINATION_STATE_CONTRACT.todo_domain_record.item_schema_version;
-export const TODO_DOMAIN_RECORD_CONTRACT = recordContract({
-  fields: TODO_CANONICAL_READ_RECORD_FIELDS.filter((field) =>
-    !COORDINATION_STATE_CONTRACT.todo_projection_metadata.fields.includes(field)),
+export const TODO_DOMAIN_RECORD_CONTRACT: RecordContract = Object.freeze({
+  fields: Object.freeze(TODO_CANONICAL_READ_RECORD_FIELDS.filter((field) =>
+    !(COORDINATION_STATE_CONTRACT.todo_projection_metadata.fields as readonly string[]).includes(field))),
   required_fields: COORDINATION_STATE_CONTRACT.todo_domain_record.required_fields,
-}, "todo_domain_record");
+});
 
 export interface TodoDomainRecord extends JsonObject {
   schema_version: string;

@@ -16,6 +16,12 @@
 
 ## Current implementation checkpoint
 
+A checked-in generator validates the language-neutral contract and emits
+deeply immutable Python/TypeScript bindings, including the native domain and
+projection sections. Both runtimes import these bindings; CI checks source
+parity and rejects stale generated files. This removes duplicate contract
+loaders without changing Todo semantics or promotion policy.
+
 The coordination path uses one language-neutral
 `coordination_state_contract_v0.json`. Its native `TodoDomainRecord` keeps task
 semantics, including `archive_state`; `TodoProjectionMetadata` contains
