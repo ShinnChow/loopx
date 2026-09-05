@@ -281,7 +281,7 @@ def test_extension_context_provider_failure_fails_open_without_blocking_sources(
     assert packet["source_scan_receipts"][0]["status"] == "completed"
     assert packet["context_retrieval_receipt"]["status"] == "unavailable"
     assert packet["context_retrieval_receipt"]["reason_code"] == (
-        "provider_retrieval_failed"
+        "extension_not_installed"
     )
 
 
@@ -741,6 +741,7 @@ def test_ephemeral_recall_disabled_profile_does_not_build_provider(
 
 def test_ephemeral_recall_extension_unavailable_returns_degraded_receipt(
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     authority = tmp_path / "authority.md"
     authority.write_text(PRIVATE_CONTENT, encoding="utf-8")
@@ -748,6 +749,7 @@ def test_ephemeral_recall_extension_unavailable_returns_degraded_receipt(
         tmp_path / "profile.json",
         authority,
     )
+    profile_before = profile.read_bytes()
 
     packet = recall_profile_decision_context(
         goal_id="example-decision-goal",
@@ -761,16 +763,66 @@ def test_ephemeral_recall_extension_unavailable_returns_degraded_receipt(
     )
 
     assert packet["status"] == "unavailable"
-    assert packet["reason_code"] == "provider_retrieval_failed"
+    assert packet["reason_code"] == "extension_not_installed"
     assert packet["ok"] is False
     assert packet["results"] == []
     assert packet["retrieval_receipt"]["status"] == "unavailable"
+    assert packet["retrieval_receipt"]["reason_code"] == (
+        "extension_not_installed"
+    )
+    assert packet["retrieval_receipt"]["search_performed"] is False
+    assert packet["retrieval_receipt"]["read_performed"] is False
+    assert packet["provider_readiness"] == {
+        "schema_version": "decision_context_provider_readiness_v0",
+        "provider_kind": "extension",
+        "extension_id": "loopx-obelisk",
+        "status": "extension_not_installed",
+        "installed": False,
+        "enabled": False,
+        "doctor_verified": False,
+        "next_action": "install_extension",
+    }
     assert packet["source_scan_performed"] is False
     assert packet["cursor_state_read"] is False
     assert packet["pending_settlement_written"] is False
     assert packet["profile_write_performed"] is False
     assert packet["external_writes_performed"] is False
     assert packet["execution_authorized"] is False
+    assert profile.read_bytes() == profile_before
+    assert not (tmp_path / "missing-runtime").exists()
+
+    assert (
+        main(
+            [
+                "--runtime-root",
+                str(tmp_path / "missing-runtime"),
+                "--format",
+                "json",
+                "decision-context",
+                "recall-context",
+                "--goal-id",
+                "example-decision-goal",
+                "--agent-id",
+                "example-agent",
+                "--profile",
+                str(profile),
+                "--context-scope-ref",
+                "host-session:codex:thread-b",
+                "--query",
+                "extension boundary",
+                "--query-summary",
+                "peer task extension decision",
+                "--observed-at",
+                OBSERVED_AT,
+            ]
+        )
+        == 0
+    )
+    cli_packet = json.loads(capsys.readouterr().out)
+    assert cli_packet["reason_code"] == "extension_not_installed"
+    assert cli_packet["provider_readiness"] == packet["provider_readiness"]
+    assert profile.read_bytes() == profile_before
+    assert not (tmp_path / "missing-runtime").exists()
 
 
 def test_ephemeral_recall_fails_closed_when_profile_changes_during_read(

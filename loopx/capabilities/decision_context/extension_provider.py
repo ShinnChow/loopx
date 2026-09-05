@@ -11,7 +11,7 @@ from ...extensions.manifest import validate_extension_id
 from ...extensions.runtime import (
     default_extension_state_file,
     execute_extension_runtime_binding,
-    resolve_capability_extension_id,
+    extension_catalog_entries,
     resolve_extension_binding,
 )
 from ..context_providers.base import (
@@ -33,6 +33,9 @@ DECISION_CONTEXT_ADVISORY_REQUEST_SCHEMA = (
 DECISION_CONTEXT_ADVISORY_RESPONSE_SCHEMA = (
     "decision_context_advisory_retrieve_response_v0"
 )
+DECISION_CONTEXT_PROVIDER_READINESS_SCHEMA = (
+    "decision_context_provider_readiness_v0"
+)
 MAX_EXTENSION_CONTEXT_ITEMS = 8
 MAX_EXTENSION_CONTEXT_CONTENT_CHARS = 16_000
 MAX_EXTENSION_CONTEXT_REF_CHARS = 512
@@ -44,6 +47,27 @@ _RESPONSE_FIELDS = {
     "items",
 }
 _ITEM_FIELDS = {"resource_ref", "summary", "content", "score"}
+
+
+def _provider_readiness(
+    *,
+    extension_id: str | None,
+    status: str,
+    installed: bool | None,
+    enabled: bool | None,
+    doctor_verified: bool | None,
+    next_action: str | None,
+) -> dict[str, Any]:
+    return {
+        "schema_version": DECISION_CONTEXT_PROVIDER_READINESS_SCHEMA,
+        "provider_kind": "extension",
+        "extension_id": extension_id,
+        "status": status,
+        "installed": installed,
+        "enabled": enabled,
+        "doctor_verified": doctor_verified,
+        "next_action": next_action,
+    }
 
 
 def _state_file(
@@ -125,6 +149,14 @@ class DecisionContextExtensionProvider:
         self.state_file = state_file
         self.extension_id = extension_id
         self.provider_id = extension_id
+        self.readiness = _provider_readiness(
+            extension_id=extension_id,
+            status="ready",
+            installed=True,
+            enabled=True,
+            doctor_verified=True,
+            next_action=None,
+        )
 
     def _binding(self) -> dict[str, Any]:
         return resolve_extension_binding(
@@ -322,11 +354,121 @@ class DecisionContextExtensionProvider:
         )
 
 
+class _UnavailableDecisionContextExtensionProvider:
+    """Represent optional extension readiness without failing the capability."""
+
+    def __init__(
+        self,
+        *,
+        extension_id: str | None,
+        reason_code: str,
+        installed: bool | None,
+        enabled: bool | None,
+        doctor_verified: bool | None,
+        next_action: str,
+    ) -> None:
+        self.provider_id = extension_id or "context-provider"
+        self.reason_code = reason_code
+        self.readiness = _provider_readiness(
+            extension_id=extension_id,
+            status=reason_code,
+            installed=installed,
+            enabled=enabled,
+            doctor_verified=doctor_verified,
+            next_action=next_action,
+        )
+
+    def retrieve(
+        self,
+        *,
+        namespace: str,
+        scope_ref: str,
+        query: str,
+        query_summary: str,
+        max_results: int,
+        timeout_seconds: float,
+        observed_at: str,
+    ) -> ContextProviderRetrieval:
+        del scope_ref, query, timeout_seconds
+        namespace = _public_safe_text(
+            namespace, field="namespace", maximum=120
+        )
+        query_summary = _public_safe_text(
+            query_summary, field="query_summary", maximum=220
+        )
+        if isinstance(max_results, bool) or not isinstance(max_results, int):
+            raise ValueError(
+                "extension context provider max_results must be an integer"
+            )
+        requested_limit = min(max(1, max_results), MAX_EXTENSION_CONTEXT_ITEMS)
+        return ContextProviderRetrieval(
+            provider=self.provider_id,
+            namespace=namespace,
+            status="unavailable",
+            query_summary=query_summary,
+            observed_at=observed_at,
+            search_performed=False,
+            read_performed=False,
+            reason_code=self.reason_code,
+            requested_limit=requested_limit,
+        )
+
+    def sync(
+        self,
+        *,
+        namespace: str,
+        resources: Sequence[tuple[str, str]],
+        timeout_seconds: float,
+        observed_at: str,
+        execute: bool,
+    ) -> ContextProviderSync:
+        del timeout_seconds, execute
+        namespace = _public_safe_text(namespace, field="namespace", maximum=120)
+        return ContextProviderSync(
+            provider=self.provider_id,
+            namespace=namespace,
+            status="unavailable",
+            observed_at=observed_at,
+            requested_count=len(resources),
+            completed_count=0,
+            reason_code=self.reason_code,
+        )
+
+
+def _implements_advisory_context(entry: Mapping[str, Any]) -> bool:
+    implementations = entry.get("implementations")
+    return isinstance(implementations, list) and any(
+        isinstance(item, Mapping)
+        and item.get("capability_id") == DECISION_CONTEXT_CAPABILITY_ID
+        and item.get("protocol") == DECISION_CONTEXT_ADVISORY_PROVIDER_PROTOCOL
+        for item in implementations
+    )
+
+
+def _unavailable_provider(
+    *,
+    extension_id: str | None,
+    reason_code: str,
+    installed: bool | None,
+    enabled: bool | None,
+    doctor_verified: bool | None,
+    next_action: str,
+) -> _UnavailableDecisionContextExtensionProvider:
+    return _UnavailableDecisionContextExtensionProvider(
+        extension_id=extension_id,
+        reason_code=reason_code,
+        installed=installed,
+        enabled=enabled,
+        doctor_verified=doctor_verified,
+        next_action=next_action,
+    )
+
+
 def build_extension_context_provider(
     config: Mapping[str, Any],
     *,
     runtime_root: str | Path | None = None,
-) -> DecisionContextExtensionProvider:
+) -> DecisionContextExtensionProvider | _UnavailableDecisionContextExtensionProvider:
     supported = {"provider", "extension_id", "extension_state_file"}
     unexpected = sorted(set(config) - supported)
     if unexpected:
@@ -335,11 +477,109 @@ def build_extension_context_provider(
             + ", ".join(unexpected)
         )
     state_file = _state_file(config, runtime_root)
-    extension_id = _extension_id(config) or resolve_capability_extension_id(
-        state_file=state_file,
-        capability_id=DECISION_CONTEXT_CAPABILITY_ID,
-        protocol=DECISION_CONTEXT_ADVISORY_PROVIDER_PROTOCOL,
-    )
+    configured_extension_id = _extension_id(config)
+    try:
+        catalog = extension_catalog_entries(state_file=state_file)
+    except ValueError:
+        return _unavailable_provider(
+            extension_id=configured_extension_id,
+            reason_code="extension_state_unavailable",
+            installed=None,
+            enabled=None,
+            doctor_verified=None,
+            next_action="repair_extension_state",
+        )
+
+    candidates = [entry for entry in catalog if _implements_advisory_context(entry)]
+    if configured_extension_id is not None:
+        selected = next(
+            (
+                entry
+                for entry in catalog
+                if isinstance(entry.get("provider"), Mapping)
+                and entry["provider"].get("id") == configured_extension_id
+            ),
+            None,
+        )
+        if selected is None:
+            return _unavailable_provider(
+                extension_id=configured_extension_id,
+                reason_code="extension_not_installed",
+                installed=False,
+                enabled=False,
+                doctor_verified=False,
+                next_action="install_extension",
+            )
+        if not _implements_advisory_context(selected):
+            return _unavailable_provider(
+                extension_id=configured_extension_id,
+                reason_code="extension_incompatible",
+                installed=True,
+                enabled=bool(selected["provider"].get("enabled")),
+                doctor_verified=bool(selected["provider"].get("ready")),
+                next_action="install_compatible_extension",
+            )
+    else:
+        ready = [
+            entry
+            for entry in candidates
+            if isinstance(entry.get("provider"), Mapping)
+            and entry["provider"].get("ready") is True
+        ]
+        if len(ready) > 1:
+            return _unavailable_provider(
+                extension_id=None,
+                reason_code="extension_provider_ambiguous",
+                installed=True,
+                enabled=True,
+                doctor_verified=True,
+                next_action="select_extension_id",
+            )
+        if len(ready) == 1:
+            selected = ready[0]
+        elif len(candidates) == 1:
+            selected = candidates[0]
+        else:
+            return _unavailable_provider(
+                extension_id=None,
+                reason_code=(
+                    "extension_provider_not_installed"
+                    if not candidates
+                    else "extension_provider_not_ready"
+                ),
+                installed=bool(candidates),
+                enabled=any(
+                    bool(entry["provider"].get("enabled"))
+                    for entry in candidates
+                ),
+                doctor_verified=False,
+                next_action=(
+                    "install_or_select_extension"
+                    if not candidates
+                    else "select_or_repair_extension"
+                ),
+            )
+
+    provider = selected["provider"]
+    extension_id = str(provider["id"])
+    if provider.get("enabled") is not True:
+        return _unavailable_provider(
+            extension_id=extension_id,
+            reason_code="extension_disabled",
+            installed=True,
+            enabled=False,
+            doctor_verified=False,
+            next_action="enable_extension",
+        )
+    if provider.get("ready") is not True:
+        return _unavailable_provider(
+            extension_id=extension_id,
+            reason_code="extension_doctor_not_ready",
+            installed=True,
+            enabled=True,
+            doctor_verified=False,
+            next_action="run_extension_doctor",
+        )
     return DecisionContextExtensionProvider(
         state_file=state_file,
         extension_id=extension_id,

@@ -350,6 +350,7 @@ def recall_profile_decision_context(
         "raw_content_persisted": False,
         "execution_authorized": False,
         "durable_promotion_required": True,
+        "provider_readiness": None,
         "retrieval_receipt": None,
         "results": [],
     }
@@ -398,11 +399,12 @@ def recall_profile_decision_context(
     )
     if not 1 <= requested_timeout <= 60:
         raise ValueError("timeout_seconds must be between 1 and 60")
+    provider = _build_advisory_context_provider(
+        profile,
+        runtime_root=runtime_root,
+    )
     retrieval = collect_context_recall(
-        provider=_build_advisory_context_provider(
-            profile,
-            runtime_root=runtime_root,
-        ),
+        provider=provider,
         namespace=str(context_config.get("namespace") or "decision-context"),
         scope_ref=bounded_scope_ref,
         query=bounded_query,
@@ -454,6 +456,7 @@ def recall_profile_decision_context(
         "observed_at": retrieval.observed_at,
         "requested_limit": retrieval.requested_limit,
         "result_count": len(results),
+        "provider_readiness": getattr(provider, "readiness", None),
         "retrieval_receipt": receipt,
         "results": results,
         "raw_content_returned": bool(results),

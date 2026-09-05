@@ -11,7 +11,12 @@ from loopx.capabilities.decision_context import extension_provider as provider_m
 from loopx.capabilities.decision_context.extension_provider import (
     build_extension_context_provider,
 )
-from loopx.extensions.runtime import disable_extension, install_extension
+from loopx.extensions.runtime import (
+    disable_extension,
+    doctor_installed_extension,
+    enable_extension,
+    install_extension,
+)
 
 
 OBSERVED_AT = "2026-09-05T00:00:00+00:00"
@@ -103,14 +108,13 @@ def test_provider_resolves_one_lifecycle_binding_and_keeps_content_private(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _state_file(tmp_path)
-    requests: list[dict[str, Any]] = []
-
-    monkeypatch.setattr(
-        provider_module,
-        "resolve_capability_extension_id",
-        lambda **_: "loopx-obelisk",
+    state_file = _state_file(tmp_path)
+    manifest = _manifest(
+        tmp_path / "extension.toml",
+        entrypoint=_provider_executable(tmp_path / "provider"),
     )
+    install_extension(manifest, state_file=state_file, execute=True)
+    requests: list[dict[str, Any]] = []
     monkeypatch.setattr(
         provider_module,
         "resolve_extension_binding",
@@ -192,11 +196,103 @@ def test_provider_runs_only_through_enabled_doctor_ready_extension(
         state_file=state_file,
         execute=True,
     )
-    with pytest.raises(ValueError, match="no enabled, doctor-ready extension"):
-        build_extension_context_provider(
-            {"provider": "extension"},
-            runtime_root=tmp_path,
-        )
+    unavailable = build_extension_context_provider(
+        {"provider": "extension"},
+        runtime_root=tmp_path,
+    )
+    receipt = _retrieve(unavailable).public_packet()
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason_code"] == "extension_disabled"
+    assert unavailable.readiness["next_action"] == "enable_extension"
+
+
+def test_missing_extension_is_typed_unavailable_without_running_provider(
+    tmp_path: Path,
+) -> None:
+    config = {"provider": "extension", "extension_id": "loopx-obelisk"}
+    provider = build_extension_context_provider(config, runtime_root=tmp_path)
+    receipt = _retrieve(provider).public_packet()
+
+    assert receipt["reason_code"] == "extension_not_installed"
+    assert receipt["search_performed"] is False
+    assert receipt["read_performed"] is False
+    assert provider.readiness == {
+        "schema_version": "decision_context_provider_readiness_v0",
+        "provider_kind": "extension",
+        "extension_id": "loopx-obelisk",
+        "status": "extension_not_installed",
+        "installed": False,
+        "enabled": False,
+        "doctor_verified": False,
+        "next_action": "install_extension",
+    }
+    assert not (tmp_path / "extensions").exists()
+
+    state_file = _state_file(tmp_path)
+    manifest = _manifest(
+        tmp_path / "extension.toml",
+        entrypoint=_provider_executable(tmp_path / "provider"),
+    )
+    install_extension(manifest, state_file=state_file, execute=True)
+    ready = build_extension_context_provider(config, runtime_root=tmp_path)
+
+    assert ready.readiness["status"] == "ready"
+    assert _retrieve(ready).status == "completed"
+
+
+def test_stale_doctor_degrades_then_recovers_without_profile_change(
+    tmp_path: Path,
+) -> None:
+    state_file = _state_file(tmp_path)
+    executable = _provider_executable(tmp_path / "provider")
+    manifest = _manifest(tmp_path / "extension.toml", entrypoint=executable)
+    install_extension(manifest, state_file=state_file, execute=True)
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    state["extensions"]["loopx-obelisk"].pop("doctor_verified_revision")
+    state_file.write_text(json.dumps(state), encoding="utf-8")
+
+    unavailable = build_extension_context_provider(
+        {"provider": "extension", "extension_id": "loopx-obelisk"},
+        runtime_root=tmp_path,
+    )
+    assert _retrieve(unavailable).reason_code == "extension_doctor_not_ready"
+    assert unavailable.readiness["next_action"] == "run_extension_doctor"
+
+    doctor_installed_extension(
+        "loopx-obelisk",
+        state_file=state_file,
+        execute=True,
+    )
+    ready = build_extension_context_provider(
+        {"provider": "extension", "extension_id": "loopx-obelisk"},
+        runtime_root=tmp_path,
+    )
+
+    assert ready.readiness["status"] == "ready"
+    assert _retrieve(ready).status == "completed"
+
+
+def test_disabled_extension_recovers_after_enable_without_config_change(
+    tmp_path: Path,
+) -> None:
+    state_file = _state_file(tmp_path)
+    manifest = _manifest(
+        tmp_path / "extension.toml",
+        entrypoint=_provider_executable(tmp_path / "provider"),
+    )
+    install_extension(manifest, state_file=state_file, execute=True)
+    config = {"provider": "extension", "extension_id": "loopx-obelisk"}
+    disable_extension("loopx-obelisk", state_file=state_file, execute=True)
+
+    unavailable = build_extension_context_provider(config, runtime_root=tmp_path)
+    assert _retrieve(unavailable).reason_code == "extension_disabled"
+    assert unavailable.readiness["next_action"] == "enable_extension"
+
+    enable_extension("loopx-obelisk", state_file=state_file, execute=True)
+    ready = build_extension_context_provider(config, runtime_root=tmp_path)
+
+    assert ready.readiness["status"] == "ready"
+    assert _retrieve(ready).status == "completed"
 
 
 def test_provider_rejects_unbounded_or_extra_extension_output(
@@ -226,12 +322,9 @@ def test_provider_rejects_unbounded_or_extra_extension_output(
             "authority_revision": 7,
         },
     )
-    provider = build_extension_context_provider(
-        {
-            "provider": "extension",
-            "extension_id": "loopx-obelisk",
-            "extension_state_file": str(_state_file(tmp_path)),
-        }
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
     )
 
     with pytest.raises(ValueError, match="unsupported: authority_revision"):
@@ -281,12 +374,9 @@ def test_provider_rejects_missing_response_or_item_fields(
         "execute_extension_runtime_binding",
         lambda *_, **__: next(responses),
     )
-    provider = build_extension_context_provider(
-        {
-            "provider": "extension",
-            "extension_id": "loopx-obelisk",
-            "extension_state_file": str(_state_file(tmp_path)),
-        }
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
     )
 
     with pytest.raises(ValueError, match="missing: items"):
@@ -328,12 +418,9 @@ def test_provider_rejects_non_finite_score(
             ],
         },
     )
-    provider = build_extension_context_provider(
-        {
-            "provider": "extension",
-            "extension_id": "loopx-obelisk",
-            "extension_state_file": str(_state_file(tmp_path)),
-        }
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
     )
 
     with pytest.raises(ValueError, match="score must be finite"):
@@ -360,12 +447,9 @@ def test_provider_rejects_timeout_that_generic_extension_runtime_cannot_enforce(
             "argv": ["loopx-obelisk"],
         },
     )
-    provider = build_extension_context_provider(
-        {
-            "provider": "extension",
-            "extension_id": "loopx-obelisk",
-            "extension_state_file": str(_state_file(tmp_path)),
-        }
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
     )
 
     with pytest.raises(ValueError, match="whole number of at least 1"):
@@ -434,12 +518,9 @@ def test_provider_rejects_inconsistent_status_reason_code(
             "items": [],
         },
     )
-    provider = build_extension_context_provider(
-        {
-            "provider": "extension",
-            "extension_id": "loopx-obelisk",
-            "extension_state_file": str(_state_file(tmp_path)),
-        }
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
     )
 
     with pytest.raises(ValueError, match=expected_error):
