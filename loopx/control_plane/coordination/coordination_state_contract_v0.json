@@ -160,6 +160,10 @@
     "settlement_requirement_schema": "settlement_workspace_requirement_v0",
     "legacy_receipt_evidence_schema": "legacy_settlement_receipt_evidence_v0"
   },
+  "task_lease_protocol": {
+    "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
+    "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",

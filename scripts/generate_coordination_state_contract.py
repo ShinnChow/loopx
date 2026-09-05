@@ -31,6 +31,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "legacy_writer_fence_protocol",
     "delivery_continuity_protocol",
     "delivery_workspace_protocol",
+    "task_lease_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -108,6 +109,10 @@ DELIVERY_WORKSPACE_PROTOCOL_KEYS = (
     "resolution_schema",
     "settlement_requirement_schema",
     "legacy_receipt_evidence_schema",
+)
+TASK_LEASE_PROTOCOL_KEYS = (
+    "acquire_request_schema",
+    "lifecycle_request_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -231,6 +236,16 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("delivery workspace protocol schemas must be non-empty strings")
     if len(set(delivery_workspace.values())) != len(delivery_workspace):
         raise ValueError("delivery workspace protocol schemas must be unique")
+    task_lease = raw.get("task_lease_protocol")
+    if not isinstance(task_lease, dict) or tuple(task_lease) != TASK_LEASE_PROTOCOL_KEYS:
+        raise ValueError("task lease protocol has unexpected fields or order")
+    if any(
+        not isinstance(task_lease.get(key), str) or not task_lease[key]
+        for key in TASK_LEASE_PROTOCOL_KEYS
+    ):
+        raise ValueError("task lease protocol schemas must be non-empty strings")
+    if len(set(task_lease.values())) != len(task_lease):
+        raise ValueError("task lease protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -290,6 +305,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"DELIVERY_WORKSPACE_{key.upper()}: Final[str] = {delivery_workspace[key]!r}"
         for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
     )
+    task_lease = contract["task_lease_protocol"]
+    task_lease_constants = "\n".join(
+        f"TASK_LEASE_{key.upper()}: Final[str] = {task_lease[key]!r}"
+        for key in TASK_LEASE_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -308,6 +328,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
         f"\n{delivery_workspace_constants}\n"
+        f"\n{task_lease_constants}\n"
     )
 
 
@@ -343,6 +364,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.{key};"
         for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
     )
+    task_lease_constants = "\n".join(
+        f"export const TASK_LEASE_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.task_lease_protocol.{key};"
+        for key in TASK_LEASE_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -359,6 +385,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
         f"\n{delivery_workspace_constants}\n"
+        f"\n{task_lease_constants}\n"
     )
 
 

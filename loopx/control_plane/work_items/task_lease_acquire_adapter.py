@@ -11,6 +11,8 @@ from typing import Any
 
 from ..coordination.coordination_state_contract_generated import (
     LOCAL_AUTHORITY_SHADOW_BINDING_SCHEMA,
+    TASK_LEASE_ACQUIRE_REQUEST_SCHEMA,
+    TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA,
 )
 
 from ...history import load_registry
@@ -24,8 +26,8 @@ from ..todos.contract import normalize_todo_id
 from ..todos.handoff_mode import HANDOFF_MODE_LEGACY
 from .local_lease_record import TASK_LEASE_SCHEMA_VERSION, TaskLeaseError
 
-TASK_LEASE_ACQUIRE_NATIVE_SCHEMA_VERSION = "loopx_task_lease_acquire_native_v0"
-TASK_LEASE_LIFECYCLE_NATIVE_SCHEMA_VERSION = "loopx_task_lease_lifecycle_native_v0"
+TASK_LEASE_ACQUIRE_NATIVE_SCHEMA_VERSION = TASK_LEASE_ACQUIRE_REQUEST_SCHEMA
+TASK_LEASE_LIFECYCLE_NATIVE_SCHEMA_VERSION = TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA
 TASK_LEASE_AUTHORITY_SNAPSHOT_ATTEMPTS = 3
 
 

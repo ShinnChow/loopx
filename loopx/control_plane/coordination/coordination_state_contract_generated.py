@@ -155,6 +155,8 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
                                  'resolution_schema': 'delivery_workspace_resolution_v0',
                                  'settlement_requirement_schema': 'settlement_workspace_requirement_v0',
                                  'legacy_receipt_evidence_schema': 'legacy_settlement_receipt_evidence_v0'},
+ 'task_lease_protocol': {'acquire_request_schema': 'loopx_task_lease_acquire_native_v0',
+                         'lifecycle_request_schema': 'loopx_task_lease_lifecycle_native_v0'},
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
                    'markdown_role': 'human_workbench_and_compatibility_projection'}})
@@ -217,3 +219,6 @@ DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA: Final[str] = 'loopx_delivery_workspa
 DELIVERY_WORKSPACE_RESOLUTION_SCHEMA: Final[str] = 'delivery_workspace_resolution_v0'
 DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA: Final[str] = 'settlement_workspace_requirement_v0'
 DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA: Final[str] = 'legacy_settlement_receipt_evidence_v0'
+
+TASK_LEASE_ACQUIRE_REQUEST_SCHEMA: Final[str] = 'loopx_task_lease_acquire_native_v0'
+TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA: Final[str] = 'loopx_task_lease_lifecycle_native_v0'

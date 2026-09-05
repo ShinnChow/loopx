@@ -181,6 +181,10 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "settlement_requirement_schema": "settlement_workspace_requirement_v0",
     "legacy_receipt_evidence_schema": "legacy_settlement_receipt_evidence_v0"
   },
+  "task_lease_protocol": {
+    "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
+    "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -246,3 +250,6 @@ export const DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA = COORDINATION_STATE_CON
 export const DELIVERY_WORKSPACE_RESOLUTION_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.resolution_schema;
 export const DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.settlement_requirement_schema;
 export const DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.legacy_receipt_evidence_schema;
+
+export const TASK_LEASE_ACQUIRE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.acquire_request_schema;
+export const TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.lifecycle_request_schema;
