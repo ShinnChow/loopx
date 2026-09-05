@@ -14,7 +14,7 @@ import { projectEditableCapabilityConfiguration } from "../../data/capability-co
 import { useWorkspaceI18n } from "./i18n";
 import { CapabilityConfigurationFields } from "./capability-configuration-fields";
 import { localizeCapability, localizedCapabilityFieldCopy } from "./capability-localization";
-import { canEditCapability, CapabilityCatalogNavigation, CapabilityConfigurationSummary, CapabilityDetailHeader, CapabilityEditorStatus } from "./capability-workbench";
+import { canEditCapability, CapabilityCatalogNavigation, CapabilityConfigurationSummary, CapabilityDetailHeader, CapabilityEditorStatus, CapabilityEffectiveSource } from "./capability-workbench";
 
 type CapabilityCatalogProps = Readonly<{
   catalog: CapabilityConfigurationCatalog;
@@ -203,12 +203,9 @@ function CapabilityCatalog({ catalog, goalId, onApplied }: CapabilityCatalogProp
       <article className="personal-capability-detail">
         <CapabilityDetailHeader capability={selected} locale={locale} />
 
-        <CapabilityConfigurationSummary values={[
-          { label: t("capabilities.goalValue"), value: localizedSelected.current },
-          { label: t(localizedSelected.machine_current ? "capabilities.machineValue" : "capabilities.defaultValue"), value: localizedSelected.machine_current ?? localizedSelected.default },
-        ]} source={localizedSelected.effective_configuration?.source} t={t} />
+        <CapabilityEffectiveSource source={localizedSelected.effective_configuration?.source} t={t} />
         <CapabilityEditorStatus available={editorAvailable} t={t}
-          description={editorAvailable ? t("capabilities.revisionLockedReady") : readOnlyReason} />
+          description={readOnlyReason} />
 
         {editorAvailable ? (
           <section className="personal-capability-field-summary">
@@ -238,6 +235,10 @@ function CapabilityCatalog({ catalog, goalId, onApplied }: CapabilityCatalogProp
             </button>
           </footer>
         ) : null}
+        <CapabilityConfigurationSummary key={selected.capability_id} values={[
+          { label: t("capabilities.goalValue"), value: localizedSelected.current },
+          { label: t(localizedSelected.machine_current ? "capabilities.machineValue" : "capabilities.defaultValue"), value: localizedSelected.machine_current ?? localizedSelected.default },
+        ]} t={t} />
       </article>
     </div>
   );

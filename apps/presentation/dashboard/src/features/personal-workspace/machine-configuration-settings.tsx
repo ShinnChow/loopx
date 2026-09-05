@@ -18,7 +18,7 @@ import {
 import { projectEditableCapabilityConfiguration } from "../../data/capability-configuration";
 import { CapabilityConfigurationFields } from "./capability-configuration-fields";
 import { localizeCapability, localizedCapabilityFieldCopy } from "./capability-localization";
-import { canEditCapability, CapabilityCatalogNavigation, CapabilityConfigurationSummary, CapabilityDetailHeader, CapabilityEditorStatus } from "./capability-workbench";
+import { canEditCapability, CapabilityCatalogNavigation, CapabilityConfigurationSummary, CapabilityDetailHeader, CapabilityEditorStatus, CapabilityEffectiveSource } from "./capability-workbench";
 import { useWorkspaceI18n } from "./i18n";
 
 type CapabilityDescriptor = CapabilityConfigurationCatalog["capabilities"][number];
@@ -295,13 +295,10 @@ export function MachineConfigurationSettings() {
         <article className="personal-capability-detail">
           <CapabilityDetailHeader capability={selectedRaw} locale={locale} />
 
-          {selected.available_scopes.includes("machine") ? <CapabilityConfigurationSummary
-            values={[{ label: t("machine.currentValue"), value: selectedCurrent }, { label: t("capabilities.defaultValue"), value: selected.default }]}
+          {selected.available_scopes.includes("machine") ? <CapabilityEffectiveSource
             source={configured ? "machine_default" : "capability_default"} t={t}
           /> : null}
-          <CapabilityEditorStatus available={editorAvailable} t={t} description={editorAvailable
-            ? t("machine.revisionLockedReady")
-            : !selected.available_scopes.includes("machine") ? t("machine.goalOnly")
+          <CapabilityEditorStatus available={editorAvailable} t={t} description={!selected.available_scopes.includes("machine") ? t("machine.goalOnly")
               : t("machine.editorUnavailableDescription")} />
 
           {selected.capability_id === "periodic_report" ? (
@@ -364,6 +361,10 @@ export function MachineConfigurationSettings() {
             <button disabled={Boolean(busy) || !editorValid} onClick={() => void createPreview()} type="button">{busy === "preview" ? t("common.loading") : t("machine.previewChanges")}</button>
             <button className="is-primary" disabled={Boolean(busy) || !preview} onClick={() => void applyPreview()} type="button">{busy === "apply" ? t("common.loading") : t("machine.applyPreview")}</button>
           </footer> : null}
+          {selected.available_scopes.includes("machine") ? <CapabilityConfigurationSummary key={selected.capability_id}
+            values={[{ label: t("machine.currentValue"), value: selectedCurrent }, { label: t("capabilities.defaultValue"), value: selected.default }]}
+            t={t}
+          /> : null}
         </article>
       </div>
     </section>

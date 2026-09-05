@@ -13,22 +13,28 @@ export function canEditCapability(capability: CapabilityDescriptor, scope: "goal
     && capability.configuration_editor.writable_scopes.includes(scope);
 }
 
-export function CapabilityConfigurationSummary({ values, source, t }: Readonly<{
+export function CapabilityConfigurationSummary({ values, t }: Readonly<{
   values: ReadonlyArray<{ label: string; value: Record<string, unknown> | undefined }>;
-  source?: NonNullable<CapabilityDescriptor["effective_configuration"]>["source"];
   t: WorkspaceTranslate;
 }>) {
-  return <>
+  return <details className="personal-capability-raw-values">
+    <summary>{t("capabilities.rawJson")}</summary>
     <div className="personal-capability-value-grid">
       {values.map(({ label, value }) => <section key={label}>
         <strong>{label}</strong><pre>{value ? JSON.stringify(value, null, 2) : "—"}</pre>
       </section>)}
     </div>
-    {source ? <p className="personal-capability-effective-source">
+  </details>;
+}
+
+export function CapabilityEffectiveSource({ source, t }: Readonly<{
+  source?: NonNullable<CapabilityDescriptor["effective_configuration"]>["source"];
+  t: WorkspaceTranslate;
+}>) {
+  return source ? <p className="personal-capability-effective-source">
       <ShieldCheck aria-hidden size={15} />
       <span><strong>{t("capabilities.effectiveSource")}</strong>{t(`capabilities.source.${source}`)}</span>
-    </p> : null}
-  </>;
+    </p> : null;
 }
 
 export function CapabilityEditorStatus({ available, description, t }: Readonly<{
@@ -36,9 +42,10 @@ export function CapabilityEditorStatus({ available, description, t }: Readonly<{
   description: string;
   t: WorkspaceTranslate;
 }>) {
-  return <section className={`personal-capability-editor-status ${available ? "is-preview" : "is-read-only"}`}>
-    {available ? <ShieldCheck aria-hidden size={18} /> : <AlertTriangle aria-hidden size={18} />}
-    <div><strong>{t(available ? "capabilities.editorPrepared" : "capabilities.readOnly")}</strong><p>{description}</p></div>
+  if (available) return null;
+  return <section className="personal-capability-editor-status is-read-only">
+    <AlertTriangle aria-hidden size={18} />
+    <div><strong>{t("capabilities.readOnly")}</strong><p>{description}</p></div>
   </section>;
 }
 
