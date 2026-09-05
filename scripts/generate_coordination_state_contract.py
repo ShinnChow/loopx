@@ -22,22 +22,6 @@ CONTRACT_PATH = (
 PYTHON_PATH = CONTRACT_PATH.with_name("coordination_state_contract_generated.py")
 TYPESCRIPT_PATH = CONTRACT_PATH.with_name("coordination_state_contract.generated.ts")
 
-EXPECTED_TOP_LEVEL_KEYS = {
-    "schema_version", "todo_read_record", "todo_domain_record",
-    "todo_projection_metadata", "compatibility",
-    "local_authority_protocol",
-    "runtime_shadow_protocol",
-    "local_authority_shadow_protocol",
-    "legacy_writer_fence_protocol",
-    "delivery_continuity_protocol",
-    "delivery_workspace_protocol",
-    "delivery_workspace_snapshot_protocol",
-    "task_lease_protocol",
-    "capability_hook_protocol",
-    "action_portfolio_protocol",
-    "todo_resume_protocol",
-    "replan_settlement_protocol",
-}
 EXPECTED_TODO_KEYS = {
     "schema_version",
     "item_schema_version",
@@ -164,6 +148,27 @@ LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
 }
 
 
+# One ordered binding map owns validation keys and both language exports.
+PROTOCOL_BINDINGS = {
+    "local_authority_protocol": {key: f"LOCAL_COORDINATION_{key.upper()}" for key in LOCAL_AUTHORITY_PROTOCOL_KEYS},
+    "runtime_shadow_protocol": {key: f"COORDINATION_RUNTIME_SHADOW_{key.upper()}" for key in RUNTIME_SHADOW_PROTOCOL_KEYS},
+    "local_authority_shadow_protocol": {key: f"LOCAL_AUTHORITY_SHADOW_{key.upper()}" for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS},
+    "legacy_writer_fence_protocol": LEGACY_WRITER_FENCE_CONSTANT_NAMES,
+    "delivery_continuity_protocol": {key: f"DELIVERY_{key.upper()}" for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS},
+    "delivery_workspace_protocol": {key: f"DELIVERY_WORKSPACE_{key.upper()}" for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS},
+    "delivery_workspace_snapshot_protocol": {key: f"DELIVERY_WORKSPACE_SNAPSHOT_{key.upper()}" for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS},
+    "task_lease_protocol": {key: f"TASK_LEASE_{key.upper()}" for key in TASK_LEASE_PROTOCOL_KEYS},
+    "capability_hook_protocol": {key: f"CAPABILITY_HOOK_{key.upper()}" for key in CAPABILITY_HOOK_PROTOCOL_KEYS},
+    "action_portfolio_protocol": {key: f"ACTION_PORTFOLIO_{key.upper()}" for key in ACTION_PORTFOLIO_PROTOCOL_KEYS},
+    "todo_resume_protocol": {key: f"TODO_RESUME_{key.upper()}" for key in TODO_RESUME_PROTOCOL_KEYS},
+    "replan_settlement_protocol": {key: f"REPLAN_SETTLEMENT_{key.upper()}" for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS},
+}
+EXPECTED_TOP_LEVEL_KEYS = {
+    "schema_version", "todo_read_record", "todo_domain_record",
+    "todo_projection_metadata", "compatibility", *PROTOCOL_BINDINGS,
+}
+
+
 def _string_list(value: object, *, label: str) -> list[str]:
     if (
         not isinstance(value, list)
@@ -198,165 +203,19 @@ def load_contract() -> dict[str, Any]:
             "todo_read_record.required_fields are absent from fields: "
             + ", ".join(missing)
         )
-    protocol = raw.get("local_authority_protocol")
-    if not isinstance(protocol, dict) or tuple(protocol) != LOCAL_AUTHORITY_PROTOCOL_KEYS:
-        raise ValueError("local authority protocol has unexpected fields or order")
-    if any(
-        not isinstance(protocol.get(key), str) or not protocol[key]
-        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
-    ):
-        raise ValueError("local authority protocol schemas must be non-empty strings")
-    if len(set(protocol.values())) != len(protocol):
-        raise ValueError("local authority protocol schemas must be unique")
-    runtime_shadow = raw.get("runtime_shadow_protocol")
-    if (
-        not isinstance(runtime_shadow, dict)
-        or tuple(runtime_shadow) != RUNTIME_SHADOW_PROTOCOL_KEYS
-    ):
-        raise ValueError("runtime shadow protocol has unexpected fields or order")
-    if any(
-        not isinstance(runtime_shadow.get(key), str) or not runtime_shadow[key]
-        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
-    ):
-        raise ValueError("runtime shadow protocol schemas must be non-empty strings")
-    if len(set(runtime_shadow.values())) != len(runtime_shadow):
-        raise ValueError("runtime shadow protocol schemas must be unique")
-    if set(protocol.values()) & set(runtime_shadow.values()):
-        raise ValueError("protocol schemas must be unique across families")
-    local_shadow = raw.get("local_authority_shadow_protocol")
-    if (
-        not isinstance(local_shadow, dict)
-        or tuple(local_shadow) != LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
-    ):
-        raise ValueError("local authority shadow protocol has unexpected fields or order")
-    if any(
-        not isinstance(local_shadow.get(key), str) or not local_shadow[key]
-        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
-    ):
-        raise ValueError("local authority shadow protocol schemas must be non-empty strings")
-    if len(set(local_shadow.values())) != len(local_shadow):
-        raise ValueError("local authority shadow protocol schemas must be unique")
-    writer_fence = raw.get("legacy_writer_fence_protocol")
-    if (
-        not isinstance(writer_fence, dict)
-        or tuple(writer_fence) != LEGACY_WRITER_FENCE_PROTOCOL_KEYS
-    ):
-        raise ValueError("legacy writer fence protocol has unexpected fields or order")
-    if any(
-        not isinstance(writer_fence.get(key), str) or not writer_fence[key]
-        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
-    ):
-        raise ValueError("legacy writer fence protocol schemas must be non-empty strings")
-    if len(set(writer_fence.values())) != len(writer_fence):
-        raise ValueError("legacy writer fence protocol schemas must be unique")
-    delivery_continuity = raw.get("delivery_continuity_protocol")
-    if (
-        not isinstance(delivery_continuity, dict)
-        or tuple(delivery_continuity) != DELIVERY_CONTINUITY_PROTOCOL_KEYS
-    ):
-        raise ValueError("delivery continuity protocol has unexpected fields or order")
-    if any(
-        not isinstance(delivery_continuity.get(key), str)
-        or not delivery_continuity[key]
-        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
-    ):
-        raise ValueError("delivery continuity protocol schemas must be non-empty strings")
-    if len(set(delivery_continuity.values())) != len(delivery_continuity):
-        raise ValueError("delivery continuity protocol schemas must be unique")
-    delivery_workspace = raw.get("delivery_workspace_protocol")
-    if (
-        not isinstance(delivery_workspace, dict)
-        or tuple(delivery_workspace) != DELIVERY_WORKSPACE_PROTOCOL_KEYS
-    ):
-        raise ValueError("delivery workspace protocol has unexpected fields or order")
-    if any(
-        not isinstance(delivery_workspace.get(key), str)
-        or not delivery_workspace[key]
-        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
-    ):
-        raise ValueError("delivery workspace protocol schemas must be non-empty strings")
-    if len(set(delivery_workspace.values())) != len(delivery_workspace):
-        raise ValueError("delivery workspace protocol schemas must be unique")
-    delivery_workspace_snapshot = raw.get("delivery_workspace_snapshot_protocol")
-    if (
-        not isinstance(delivery_workspace_snapshot, dict)
-        or tuple(delivery_workspace_snapshot)
-        != DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
-    ):
-        raise ValueError(
-            "delivery workspace snapshot protocol has unexpected fields or order"
-        )
-    if any(
-        not isinstance(delivery_workspace_snapshot.get(key), str)
-        or not delivery_workspace_snapshot[key]
-        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
-    ):
-        raise ValueError(
-            "delivery workspace snapshot protocol schemas must be non-empty strings"
-        )
-    if len(set(delivery_workspace_snapshot.values())) != len(
-        delivery_workspace_snapshot
-    ):
-        raise ValueError("delivery workspace snapshot protocol schemas must be unique")
-    task_lease = raw.get("task_lease_protocol")
-    if not isinstance(task_lease, dict) or tuple(task_lease) != TASK_LEASE_PROTOCOL_KEYS:
-        raise ValueError("task lease protocol has unexpected fields or order")
-    if any(
-        not isinstance(task_lease.get(key), str) or not task_lease[key]
-        for key in TASK_LEASE_PROTOCOL_KEYS
-    ):
-        raise ValueError("task lease protocol schemas must be non-empty strings")
-    if len(set(task_lease.values())) != len(task_lease):
-        raise ValueError("task lease protocol schemas must be unique")
-    capability_hook = raw.get("capability_hook_protocol")
-    if (
-        not isinstance(capability_hook, dict)
-        or tuple(capability_hook) != CAPABILITY_HOOK_PROTOCOL_KEYS
-    ):
-        raise ValueError("capability hook protocol has unexpected fields or order")
-    if any(
-        not isinstance(capability_hook.get(key), str) or not capability_hook[key]
-        for key in CAPABILITY_HOOK_PROTOCOL_KEYS
-    ):
-        raise ValueError("capability hook protocol schemas must be non-empty strings")
-    if len(set(capability_hook.values())) != len(capability_hook):
-        raise ValueError("capability hook protocol schemas must be unique")
-    action_portfolio = raw.get("action_portfolio_protocol")
-    if (
-        not isinstance(action_portfolio, dict)
-        or tuple(action_portfolio) != ACTION_PORTFOLIO_PROTOCOL_KEYS
-    ):
-        raise ValueError("action portfolio protocol has unexpected fields or order")
-    if any(
-        not isinstance(action_portfolio.get(key), str) or not action_portfolio[key]
-        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
-    ):
-        raise ValueError("action portfolio protocol schemas must be non-empty strings")
-    if len(set(action_portfolio.values())) != len(action_portfolio):
-        raise ValueError("action portfolio protocol schemas must be unique")
-    todo_resume = raw.get("todo_resume_protocol")
-    if not isinstance(todo_resume, dict) or tuple(todo_resume) != TODO_RESUME_PROTOCOL_KEYS:
-        raise ValueError("Todo resume protocol has unexpected fields or order")
-    if any(
-        not isinstance(todo_resume.get(key), str) or not todo_resume[key]
-        for key in TODO_RESUME_PROTOCOL_KEYS
-    ):
-        raise ValueError("Todo resume protocol schemas must be non-empty strings")
-    if len(set(todo_resume.values())) != len(todo_resume):
-        raise ValueError("Todo resume protocol schemas must be unique")
-    replan_settlement = raw.get("replan_settlement_protocol")
-    if (
-        not isinstance(replan_settlement, dict)
-        or tuple(replan_settlement) != REPLAN_SETTLEMENT_PROTOCOL_KEYS
-    ):
-        raise ValueError("replan settlement protocol has unexpected fields or order")
-    if any(
-        not isinstance(replan_settlement.get(key), str) or not replan_settlement[key]
-        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
-    ):
-        raise ValueError("replan settlement protocol schemas must be non-empty strings")
-    if len(set(replan_settlement.values())) != len(replan_settlement):
-        raise ValueError("replan settlement protocol schemas must be unique")
+    seen_schemas: set[str] = set()
+    for section, bindings in PROTOCOL_BINDINGS.items():
+        protocol = raw.get(section)
+        label = section.replace("_", " ")
+        if not isinstance(protocol, dict) or tuple(protocol) != tuple(bindings):
+            raise ValueError(f"{label} has unexpected fields or order")
+        if any(not isinstance(value, str) or not value for value in protocol.values()):
+            raise ValueError(f"{label} schemas must be non-empty strings")
+        if len(set(protocol.values())) != len(protocol):
+            raise ValueError(f"{label} schemas must be unique")
+        if seen_schemas.intersection(protocol.values()):
+            raise ValueError("protocol schemas must be unique across families")
+        seen_schemas.update(protocol.values())
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -384,68 +243,10 @@ def load_contract() -> dict[str, Any]:
 
 def render_python(contract: dict[str, Any]) -> str:
     literal = pformat(contract, width=88, sort_dicts=False)
-    protocol = contract["local_authority_protocol"]
-    local_constants = "\n".join(
-        f"LOCAL_COORDINATION_{key.upper()}: Final[str] = {protocol[key]!r}"
-        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
-    )
-    runtime_shadow = contract["runtime_shadow_protocol"]
-    shadow_constants = "\n".join(
-        f"COORDINATION_RUNTIME_SHADOW_{key.upper()}: Final[str] = "
-        f"{runtime_shadow[key]!r}"
-        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
-    )
-    local_shadow = contract["local_authority_shadow_protocol"]
-    local_shadow_constants = "\n".join(
-        f"LOCAL_AUTHORITY_SHADOW_{key.upper()}: Final[str] = {local_shadow[key]!r}"
-        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
-    )
-    writer_fence = contract["legacy_writer_fence_protocol"]
-    writer_fence_constants = "\n".join(
-        f"{LEGACY_WRITER_FENCE_CONSTANT_NAMES[key]}: Final[str] = "
-        f"{writer_fence[key]!r}"
-        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
-    )
-    delivery_continuity = contract["delivery_continuity_protocol"]
-    delivery_continuity_constants = "\n".join(
-        f"DELIVERY_{key.upper()}: Final[str] = {delivery_continuity[key]!r}"
-        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
-    )
-    delivery_workspace = contract["delivery_workspace_protocol"]
-    delivery_workspace_constants = "\n".join(
-        f"DELIVERY_WORKSPACE_{key.upper()}: Final[str] = {delivery_workspace[key]!r}"
-        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
-    )
-    delivery_workspace_snapshot = contract["delivery_workspace_snapshot_protocol"]
-    delivery_workspace_snapshot_constants = "\n".join(
-        f"DELIVERY_WORKSPACE_SNAPSHOT_{key.upper()}: Final[str] = "
-        f"{delivery_workspace_snapshot[key]!r}"
-        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
-    )
-    task_lease = contract["task_lease_protocol"]
-    task_lease_constants = "\n".join(
-        f"TASK_LEASE_{key.upper()}: Final[str] = {task_lease[key]!r}"
-        for key in TASK_LEASE_PROTOCOL_KEYS
-    )
-    capability_hook = contract["capability_hook_protocol"]
-    capability_hook_constants = "\n".join(
-        f"CAPABILITY_HOOK_{key.upper()}: Final[str] = {capability_hook[key]!r}"
-        for key in CAPABILITY_HOOK_PROTOCOL_KEYS
-    )
-    action_portfolio = contract["action_portfolio_protocol"]
-    action_portfolio_constants = "\n".join(
-        f"ACTION_PORTFOLIO_{key.upper()}: Final[str] = {action_portfolio[key]!r}"
-        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
-    )
-    todo_resume = contract["todo_resume_protocol"]
-    todo_resume_constants = "\n".join(
-        f"TODO_RESUME_{key.upper()}: Final[str] = {todo_resume[key]!r}"
-        for key in TODO_RESUME_PROTOCOL_KEYS
-    )
-    replan_settlement = contract["replan_settlement_protocol"]
-    replan_settlement_constants = "\n".join(
-        f"REPLAN_SETTLEMENT_{key.upper()}: Final[str] = {replan_settlement[key]!r}"
-        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    constants = "\n\n".join(
+        "\n".join(f"{name}: Final[str] = {contract[section][key]!r}"
+                  for key, name in bindings.items())
+        for section, bindings in PROTOCOL_BINDINGS.items()
     )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
@@ -459,82 +260,16 @@ def render_python(contract: dict[str, Any]) -> str:
         "        return tuple(_freeze(item) for item in value)\n"
         "    return value\n\n"
         f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
-        f"{local_constants}\n\n"
-        f"{shadow_constants}\n\n"
-        f"{local_shadow_constants}\n\n"
-        f"{writer_fence_constants}\n"
-        f"\n{delivery_continuity_constants}\n"
-        f"\n{delivery_workspace_constants}\n"
-        f"\n{delivery_workspace_snapshot_constants}\n"
-        f"\n{task_lease_constants}\n"
-        f"\n{capability_hook_constants}\n"
-        f"\n{action_portfolio_constants}\n"
-        f"\n{todo_resume_constants}\n"
-        f"\n{replan_settlement_constants}\n"
+        f"{constants}\n"
     )
 
 
 def render_typescript(contract: dict[str, Any]) -> str:
     literal = json.dumps(contract, indent=2, ensure_ascii=False)
-    local_constants = "\n".join(
-        f"export const LOCAL_COORDINATION_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.local_authority_protocol.{key};"
-        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
-    )
-    shadow_constants = "\n".join(
-        f"export const COORDINATION_RUNTIME_SHADOW_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.{key};"
-        for key in RUNTIME_SHADOW_PROTOCOL_KEYS
-    )
-    local_shadow_constants = "\n".join(
-        f"export const LOCAL_AUTHORITY_SHADOW_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.{key};"
-        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
-    )
-    writer_fence_constants = "\n".join(
-        f"export const {LEGACY_WRITER_FENCE_CONSTANT_NAMES[key]} = "
-        f"COORDINATION_STATE_CONTRACT.legacy_writer_fence_protocol.{key};"
-        for key in LEGACY_WRITER_FENCE_PROTOCOL_KEYS
-    )
-    delivery_continuity_constants = "\n".join(
-        f"export const DELIVERY_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.{key};"
-        for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
-    )
-    delivery_workspace_constants = "\n".join(
-        f"export const DELIVERY_WORKSPACE_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.{key};"
-        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
-    )
-    delivery_workspace_snapshot_constants = "\n".join(
-        f"export const DELIVERY_WORKSPACE_SNAPSHOT_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.delivery_workspace_snapshot_protocol.{key};"
-        for key in DELIVERY_WORKSPACE_SNAPSHOT_PROTOCOL_KEYS
-    )
-    task_lease_constants = "\n".join(
-        f"export const TASK_LEASE_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.task_lease_protocol.{key};"
-        for key in TASK_LEASE_PROTOCOL_KEYS
-    )
-    capability_hook_constants = "\n".join(
-        f"export const CAPABILITY_HOOK_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.capability_hook_protocol.{key};"
-        for key in CAPABILITY_HOOK_PROTOCOL_KEYS
-    )
-    action_portfolio_constants = "\n".join(
-        f"export const ACTION_PORTFOLIO_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.action_portfolio_protocol.{key};"
-        for key in ACTION_PORTFOLIO_PROTOCOL_KEYS
-    )
-    todo_resume_constants = "\n".join(
-        f"export const TODO_RESUME_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.todo_resume_protocol.{key};"
-        for key in TODO_RESUME_PROTOCOL_KEYS
-    )
-    replan_settlement_constants = "\n".join(
-        f"export const REPLAN_SETTLEMENT_{key.upper()} = "
-        f"COORDINATION_STATE_CONTRACT.replan_settlement_protocol.{key};"
-        for key in REPLAN_SETTLEMENT_PROTOCOL_KEYS
+    constants = "\n\n".join(
+        "\n".join(f"export const {name} = COORDINATION_STATE_CONTRACT.{section}.{key};"
+                  for key, name in bindings.items())
+        for section, bindings in PROTOCOL_BINDINGS.items()
     )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
@@ -546,18 +281,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         "  return value;\n"
         "}\n\n"
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
-        f"{local_constants}\n\n"
-        f"{shadow_constants}\n\n"
-        f"{local_shadow_constants}\n\n"
-        f"{writer_fence_constants}\n"
-        f"\n{delivery_continuity_constants}\n"
-        f"\n{delivery_workspace_constants}\n"
-        f"\n{delivery_workspace_snapshot_constants}\n"
-        f"\n{task_lease_constants}\n"
-        f"\n{capability_hook_constants}\n"
-        f"\n{action_portfolio_constants}\n"
-        f"\n{todo_resume_constants}\n"
-        f"\n{replan_settlement_constants}\n"
+        f"{constants}\n"
     )
 
 

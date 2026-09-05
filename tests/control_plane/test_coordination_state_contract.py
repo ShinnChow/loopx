@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import runpy
 import subprocess
+import runpy
 
 import pytest
 
@@ -52,6 +53,27 @@ from loopx.control_plane.coordination.local_authority import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.mark.parametrize("change", ["missing", "unknown", "wrong_type", "duplicate"])
+def test_generator_rejects_invalid_protocol_contract(change, tmp_path, monkeypatch) -> None:
+    generator = runpy.run_path(str(ROOT / "scripts/generate_coordination_state_contract.py"))
+    load = generator["load_contract"]
+    contract = load()
+    protocol = contract["task_lease_protocol"]
+    if change == "missing":
+        del protocol["acquire_request_schema"]
+    elif change == "unknown":
+        protocol["future_schema"] = "loopx_future_v0"
+    elif change == "wrong_type":
+        protocol["acquire_request_schema"] = True
+    else:
+        protocol["acquire_request_schema"] = protocol["lifecycle_request_schema"]
+    path = tmp_path / "contract.json"
+    path.write_text(json.dumps(contract), encoding="utf-8")
+    monkeypatch.setitem(load.__globals__, "CONTRACT_PATH", path)
+    with pytest.raises(ValueError, match="task lease protocol"):
+        load()
 
 
 def test_generated_coordination_bindings_are_current() -> None:
