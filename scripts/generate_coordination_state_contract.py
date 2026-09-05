@@ -27,6 +27,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "todo_projection_metadata", "compatibility",
     "local_authority_protocol",
     "runtime_shadow_protocol",
+    "local_authority_shadow_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -64,6 +65,25 @@ RUNTIME_SHADOW_PROTOCOL_KEYS = (
     "qualify_result_schema",
     "todo_read_request_schema",
     "todo_read_result_schema",
+)
+LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS = (
+    "binding_schema",
+    "config_schema",
+    "request_schema",
+    "projection_schema",
+    "evidence_schema",
+    "observation_receipt_schema",
+    "outbox_entry_schema",
+    "outbox_commit_schema",
+    "drain_cursor_schema",
+    "transaction_projection_schema",
+    "commit_entry_request_schema",
+    "commit_entry_result_schema",
+    "read_request_schema",
+    "read_result_schema",
+    "event_schema",
+    "transaction_receipt_schema",
+    "transaction_evidence_schema",
 )
 
 
@@ -126,6 +146,19 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("runtime shadow protocol schemas must be unique")
     if set(protocol.values()) & set(runtime_shadow.values()):
         raise ValueError("protocol schemas must be unique across families")
+    local_shadow = raw.get("local_authority_shadow_protocol")
+    if (
+        not isinstance(local_shadow, dict)
+        or tuple(local_shadow) != LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
+    ):
+        raise ValueError("local authority shadow protocol has unexpected fields or order")
+    if any(
+        not isinstance(local_shadow.get(key), str) or not local_shadow[key]
+        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
+    ):
+        raise ValueError("local authority shadow protocol schemas must be non-empty strings")
+    if len(set(local_shadow.values())) != len(local_shadow):
+        raise ValueError("local authority shadow protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -164,6 +197,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{runtime_shadow[key]!r}"
         for key in RUNTIME_SHADOW_PROTOCOL_KEYS
     )
+    local_shadow = contract["local_authority_shadow_protocol"]
+    local_shadow_constants = "\n".join(
+        f"LOCAL_AUTHORITY_SHADOW_{key.upper()}: Final[str] = {local_shadow[key]!r}"
+        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -177,7 +215,8 @@ def render_python(contract: dict[str, Any]) -> str:
         "    return value\n\n"
         f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
         f"{local_constants}\n\n"
-        f"{shadow_constants}\n"
+        f"{shadow_constants}\n\n"
+        f"{local_shadow_constants}\n"
     )
 
 
@@ -193,6 +232,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.{key};"
         for key in RUNTIME_SHADOW_PROTOCOL_KEYS
     )
+    local_shadow_constants = "\n".join(
+        f"export const LOCAL_AUTHORITY_SHADOW_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.{key};"
+        for key in LOCAL_AUTHORITY_SHADOW_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -204,7 +248,8 @@ def render_typescript(contract: dict[str, Any]) -> str:
         "}\n\n"
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
         f"{local_constants}\n\n"
-        f"{shadow_constants}\n"
+        f"{shadow_constants}\n\n"
+        f"{local_shadow_constants}\n"
     )
 
 

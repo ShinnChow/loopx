@@ -17,7 +17,20 @@ from loopx.control_plane.coordination.coordination_state_contract import (
     TODO_PROJECTION_METADATA_FIELDS,
 )
 from loopx.control_plane.coordination.coordination_state_contract_generated import (
+    LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA,
+    LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA,
+    LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA,
     LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+)
+from loopx.control_plane.coordination.local_authority_shadow_adapter import (
+    LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA as BRIDGE_SHADOW_EVIDENCE_SCHEMA,
+    LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA as BRIDGE_SHADOW_REQUEST_SCHEMA,
+)
+from loopx.control_plane.coordination.local_authority_shadow_outbox import (
+    OUTBOX_ENTRY_SCHEMA,
+)
+from loopx.control_plane.coordination.runtime_shadow import (
+    build_todo_runtime_shadow_projection,
 )
 from loopx.control_plane.coordination.local_authority import (
     LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as BRIDGE_LIST_REQUEST_SCHEMA,
@@ -124,6 +137,18 @@ def test_domain_projection_split_keeps_archival_as_a_task_fact() -> None:
 
 def test_python_bridge_uses_generated_local_authority_protocol_schemas() -> None:
     assert BRIDGE_LIST_REQUEST_SCHEMA == LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA
+
+
+def test_python_shadow_bridges_use_generated_protocol_schemas() -> None:
+    assert BRIDGE_SHADOW_REQUEST_SCHEMA == LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA
+    assert BRIDGE_SHADOW_EVIDENCE_SCHEMA == LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA
+    assert OUTBOX_ENTRY_SCHEMA == LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA
+    assert (
+        build_todo_runtime_shadow_projection(goal_id="goal_contract", todos=[])[
+            "schema_version"
+        ]
+        == "loopx_coordination_runtime_shadow_projection_v0"
+    )
 
 
 def test_record_validation_rejects_required_fields_outside_declared_fields() -> None:

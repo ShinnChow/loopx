@@ -14,8 +14,18 @@ import {
   TODO_DOMAIN_RECORD_CONTRACT,
 } from "../../loopx/control_plane/coordination/coordination_state_contract.ts";
 import {
+  LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA as GENERATED_SHADOW_EVIDENCE_SCHEMA,
+  LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA as GENERATED_SHADOW_OUTBOX_ENTRY_SCHEMA,
+  LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA as GENERATED_SHADOW_REQUEST_SCHEMA,
   LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as GENERATED_LIST_REQUEST_SCHEMA,
 } from "../../loopx/control_plane/coordination/coordination_state_contract.generated.ts";
+import {
+  LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA as RUNTIME_SHADOW_EVIDENCE_SCHEMA,
+  LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA as RUNTIME_SHADOW_REQUEST_SCHEMA,
+} from "../../loopx/control_plane/coordination/local_authority_shadow.ts";
+import {
+  LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA as RUNTIME_SHADOW_OUTBOX_ENTRY_SCHEMA,
+} from "../../loopx/control_plane/coordination/local_authority_shadow_outbox.ts";
 import {
   LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA as RUNTIME_LIST_REQUEST_SCHEMA,
 } from "../../loopx/control_plane/coordination/local_authority_runtime.ts";
@@ -79,6 +89,12 @@ test("generated coordination bindings are current", async () => {
 
 test("TypeScript runtime re-exports generated local-authority protocol schemas", () => {
   assert.equal(RUNTIME_LIST_REQUEST_SCHEMA, GENERATED_LIST_REQUEST_SCHEMA);
+});
+
+test("TypeScript shadow runtimes re-export generated protocol schemas", () => {
+  assert.equal(RUNTIME_SHADOW_REQUEST_SCHEMA, GENERATED_SHADOW_REQUEST_SCHEMA);
+  assert.equal(RUNTIME_SHADOW_EVIDENCE_SCHEMA, GENERATED_SHADOW_EVIDENCE_SCHEMA);
+  assert.equal(RUNTIME_SHADOW_OUTBOX_ENTRY_SCHEMA, GENERATED_SHADOW_OUTBOX_ENTRY_SCHEMA);
 });
 
 test("provider-bound Todo records preserve every declared field", () => {

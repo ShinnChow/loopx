@@ -141,6 +141,25 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "todo_read_request_schema": "loopx_coordination_runtime_shadow_todo_read_v0",
     "todo_read_result_schema": "loopx_coordination_runtime_shadow_todo_read_result_v0"
   },
+  "local_authority_shadow_protocol": {
+    "binding_schema": "loopx_coordination_runtime_shadow_binding_v0",
+    "config_schema": "loopx_local_authority_shadow_config_v0",
+    "request_schema": "loopx_local_authority_shadow_request_v0",
+    "projection_schema": "loopx_local_authority_shadow_projection_v0",
+    "evidence_schema": "loopx_local_authority_shadow_evidence_v0",
+    "observation_receipt_schema": "loopx_local_authority_shadow_observation_receipt_v0",
+    "outbox_entry_schema": "loopx_local_authority_shadow_outbox_entry_v0",
+    "outbox_commit_schema": "loopx_local_authority_shadow_outbox_commit_v0",
+    "drain_cursor_schema": "loopx_local_authority_shadow_drain_cursor_v0",
+    "transaction_projection_schema": "loopx_coordination_runtime_shadow_projection_v0",
+    "commit_entry_request_schema": "loopx_coordination_runtime_shadow_commit_entry_request_v0",
+    "commit_entry_result_schema": "loopx_coordination_runtime_shadow_commit_entry_result_v0",
+    "read_request_schema": "loopx_coordination_runtime_shadow_outbox_read_v0",
+    "read_result_schema": "loopx_coordination_runtime_shadow_outbox_read_result_v0",
+    "event_schema": "loopx_coordination_runtime_shadow_outbox_event_v0",
+    "transaction_receipt_schema": "loopx_coordination_runtime_shadow_outbox_receipt_v0",
+    "transaction_evidence_schema": "loopx_local_authority_shadow_evidence_v1"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -170,3 +189,21 @@ export const COORDINATION_RUNTIME_SHADOW_QUALIFY_REQUEST_SCHEMA = COORDINATION_S
 export const COORDINATION_RUNTIME_SHADOW_QUALIFY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.qualify_result_schema;
 export const COORDINATION_RUNTIME_SHADOW_TODO_READ_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.todo_read_request_schema;
 export const COORDINATION_RUNTIME_SHADOW_TODO_READ_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.runtime_shadow_protocol.todo_read_result_schema;
+
+export const LOCAL_AUTHORITY_SHADOW_BINDING_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.binding_schema;
+export const LOCAL_AUTHORITY_SHADOW_CONFIG_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.config_schema;
+export const LOCAL_AUTHORITY_SHADOW_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.request_schema;
+export const LOCAL_AUTHORITY_SHADOW_PROJECTION_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.projection_schema;
+export const LOCAL_AUTHORITY_SHADOW_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.evidence_schema;
+export const LOCAL_AUTHORITY_SHADOW_OBSERVATION_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.observation_receipt_schema;
+export const LOCAL_AUTHORITY_SHADOW_OUTBOX_ENTRY_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.outbox_entry_schema;
+export const LOCAL_AUTHORITY_SHADOW_OUTBOX_COMMIT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.outbox_commit_schema;
+export const LOCAL_AUTHORITY_SHADOW_DRAIN_CURSOR_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.drain_cursor_schema;
+export const LOCAL_AUTHORITY_SHADOW_TRANSACTION_PROJECTION_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.transaction_projection_schema;
+export const LOCAL_AUTHORITY_SHADOW_COMMIT_ENTRY_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.commit_entry_request_schema;
+export const LOCAL_AUTHORITY_SHADOW_COMMIT_ENTRY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.commit_entry_result_schema;
+export const LOCAL_AUTHORITY_SHADOW_READ_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.read_request_schema;
+export const LOCAL_AUTHORITY_SHADOW_READ_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.read_result_schema;
+export const LOCAL_AUTHORITY_SHADOW_EVENT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.event_schema;
+export const LOCAL_AUTHORITY_SHADOW_TRANSACTION_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.transaction_receipt_schema;
+export const LOCAL_AUTHORITY_SHADOW_TRANSACTION_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.local_authority_shadow_protocol.transaction_evidence_schema;
