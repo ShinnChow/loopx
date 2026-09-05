@@ -6,13 +6,16 @@ from collections.abc import Mapping
 from typing import Any
 
 from ..coordination.coordination_state_contract_generated import (
-    DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA as LEGACY_DELIVERY_WORKSPACE_SCHEMA_VERSION,
+    DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA,
     DELIVERY_WORKSPACE_SNAPSHOT_REQUEST_SCHEMA as DELIVERY_WORKSPACE_REQUEST_SCHEMA,
     DELIVERY_WORKSPACE_SNAPSHOT_RESULT_SCHEMA as DELIVERY_WORKSPACE_RESULT_SCHEMA,
     DELIVERY_WORKSPACE_SNAPSHOT_SNAPSHOT_SCHEMA as DELIVERY_WORKSPACE_SCHEMA_VERSION,
 )
 from ..effect_runtime import EffectRuntimeRejected, effect_runtime_result
 
+LEGACY_DELIVERY_WORKSPACE_SCHEMA_VERSION = (
+    DELIVERY_WORKSPACE_SNAPSHOT_LEGACY_SNAPSHOT_SCHEMA
+)
 DELIVERY_WORKSPACE_IDENTITY_KINDS = frozenset({"git_repository", "local_goal"})
 DELIVERY_WORKSPACE_KINDS = frozenset(
     {"canonical_checkout", "independent_git_worktree", "local_goal_workspace"}
