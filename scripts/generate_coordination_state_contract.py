@@ -25,6 +25,7 @@ TYPESCRIPT_PATH = CONTRACT_PATH.with_name("coordination_state_contract.generated
 EXPECTED_TOP_LEVEL_KEYS = {
     "schema_version", "todo_read_record", "todo_domain_record",
     "todo_projection_metadata", "compatibility",
+    "local_authority_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -37,6 +38,17 @@ EXPECTED_COMPATIBILITY = {
     "field_removal_policy": "maintainer_approval_required",
     "markdown_role": "human_workbench_and_compatibility_projection",
 }
+LOCAL_AUTHORITY_PROTOCOL_KEYS = (
+    "mutation_request_schema",
+    "mutation_result_schema",
+    "todo_read_request_schema",
+    "todo_read_result_schema",
+    "todo_list_request_schema",
+    "todo_list_result_schema",
+    "promotion_request_schema",
+    "promotion_result_schema",
+    "promotion_receipt_schema",
+)
 
 
 def _string_list(value: object, *, label: str) -> list[str]:
@@ -73,6 +85,16 @@ def load_contract() -> dict[str, Any]:
             "todo_read_record.required_fields are absent from fields: "
             + ", ".join(missing)
         )
+    protocol = raw.get("local_authority_protocol")
+    if not isinstance(protocol, dict) or tuple(protocol) != LOCAL_AUTHORITY_PROTOCOL_KEYS:
+        raise ValueError("local authority protocol has unexpected fields or order")
+    if any(
+        not isinstance(protocol.get(key), str) or not protocol[key]
+        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
+    ):
+        raise ValueError("local authority protocol schemas must be non-empty strings")
+    if len(set(protocol.values())) != len(protocol):
+        raise ValueError("local authority protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -100,6 +122,11 @@ def load_contract() -> dict[str, Any]:
 
 def render_python(contract: dict[str, Any]) -> str:
     literal = pformat(contract, width=88, sort_dicts=False)
+    protocol = contract["local_authority_protocol"]
+    constants = "\n".join(
+        f"LOCAL_COORDINATION_{key.upper()}: Final[str] = {protocol[key]!r}"
+        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -112,11 +139,17 @@ def render_python(contract: dict[str, Any]) -> str:
         "        return tuple(_freeze(item) for item in value)\n"
         "    return value\n\n"
         f"COORDINATION_STATE_CONTRACT: Final = _freeze({literal})\n"
+        f"{constants}\n"
     )
 
 
 def render_typescript(contract: dict[str, Any]) -> str:
     literal = json.dumps(contract, indent=2, ensure_ascii=False)
+    constants = "\n".join(
+        f"export const LOCAL_COORDINATION_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.local_authority_protocol.{key};"
+        for key in LOCAL_AUTHORITY_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -127,6 +160,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         "  return value;\n"
         "}\n\n"
         f"export const COORDINATION_STATE_CONTRACT = deepFreeze({literal} as const);\n"
+        f"{constants}\n"
     )
 
 

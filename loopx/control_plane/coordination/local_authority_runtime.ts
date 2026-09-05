@@ -3,6 +3,17 @@ import { isAbsolute, join } from "node:path";
 import type { JsonObject } from "../effect_program.ts";
 import { requireJsonObject } from "../runtime_decode.ts";
 import {
+  LOCAL_COORDINATION_MUTATION_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_MUTATION_RESULT_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA,
+  LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA,
+  LOCAL_COORDINATION_TODO_READ_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_TODO_READ_RESULT_SCHEMA,
+} from "./coordination_state_contract.generated.ts";
+import {
   commitCoordinationProjectionMutation,
   indexCoordinationProjection,
   indexCoordinationProjectionTodos,
@@ -31,26 +42,19 @@ import {
   executeCoordinationTodoClaim,
 } from "./todo_claim.ts";
 
-export const LOCAL_COORDINATION_MUTATION_REQUEST_SCHEMA =
-  "loopx_local_coordination_mutation_request_v0";
-export const LOCAL_COORDINATION_MUTATION_RESULT_SCHEMA =
-  "loopx_local_coordination_mutation_result_v0";
-export const LOCAL_COORDINATION_TODO_READ_REQUEST_SCHEMA =
-  "loopx_local_coordination_todo_read_request_v0";
-export const LOCAL_COORDINATION_TODO_READ_RESULT_SCHEMA =
-  "loopx_local_coordination_todo_read_result_v0";
-export const LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA =
-  "loopx_local_coordination_todo_list_request_v0";
-export const LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA =
-  "loopx_local_coordination_todo_list_result_v0";
 export const LOCAL_COORDINATION_TODO_CLAIM_REQUEST_SCHEMA =
   "loopx_local_coordination_todo_claim_request_v0";
-export const LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA =
-  "loopx_local_coordination_promotion_request_v0";
-export const LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA =
-  "loopx_local_coordination_promotion_result_v0";
-export const LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA =
-  "loopx_local_coordination_promotion_receipt_v0";
+export {
+  LOCAL_COORDINATION_MUTATION_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_MUTATION_RESULT_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_RECEIPT_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_PROMOTION_RESULT_SCHEMA,
+  LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_TODO_LIST_RESULT_SCHEMA,
+  LOCAL_COORDINATION_TODO_READ_REQUEST_SCHEMA,
+  LOCAL_COORDINATION_TODO_READ_RESULT_SCHEMA,
+} from "./coordination_state_contract.generated.ts";
 export { LEGACY_COORDINATION_WRITER_FENCE_SCHEMA } from "./legacy_writer_fence.ts";
 
 interface LocalAuthorityRuntimeDependencies {

@@ -21,12 +21,12 @@ from .coordination_state_contract import (
     TODO_DOMAIN_ITEM_SCHEMA_VERSION,
     TODO_ITEM_SCHEMA_VERSION,
 )
+from .coordination_state_contract_generated import (
+    LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA,
+)
 from .legacy_writer_fence import legacy_coordination_writer_fence_path
 
 
-LOCAL_COORDINATION_TODO_LIST_REQUEST_SCHEMA = (
-    "loopx_local_coordination_todo_list_request_v0"
-)
 LOCAL_COORDINATION_TODO_LIST_METHOD = "coordination.local_authority.todo_list"
 LOCAL_COORDINATION_TODO_CLAIM_REQUEST_SCHEMA = (
     "loopx_local_coordination_todo_claim_request_v0"
