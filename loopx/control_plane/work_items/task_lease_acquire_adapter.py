@@ -9,6 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from ..coordination.coordination_state_contract_generated import (
+    LOCAL_AUTHORITY_SHADOW_BINDING_SCHEMA,
+)
+
 from ...history import load_registry
 from ...paths import resolve_runtime_root
 from ..coordination.runtime_shadow import resolve_coordination_runtime_shadow_config
@@ -405,7 +409,7 @@ def execute_native_task_lease_acquire(
         goal = _registry_goal(registry, str(goal_id))
         if resolve_coordination_runtime_shadow_config(goal).enabled:
             request["runtime_shadow"] = {
-                "schema_version": "loopx_coordination_runtime_shadow_binding_v0",
+                "schema_version": LOCAL_AUTHORITY_SHADOW_BINDING_SCHEMA,
                 "provider": "file_v0",
             }
         payload = _require_native_acquire_shape(
@@ -653,7 +657,7 @@ def execute_native_task_lease_lifecycle(
             goal = _registry_goal(registry, str(goal_id))
             if resolve_coordination_runtime_shadow_config(goal).enabled:
                 request["runtime_shadow"] = {
-                    "schema_version": "loopx_coordination_runtime_shadow_binding_v0",
+                    "schema_version": LOCAL_AUTHORITY_SHADOW_BINDING_SCHEMA,
                     "provider": "file_v0",
                 }
         compacted_todo = _compact_lifecycle_todo(todo, todo_id=str(todo_id))
