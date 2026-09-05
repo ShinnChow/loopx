@@ -30,6 +30,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
     "local_authority_shadow_protocol",
     "legacy_writer_fence_protocol",
     "delivery_continuity_protocol",
+    "delivery_workspace_protocol",
 }
 EXPECTED_TODO_KEYS = {
     "schema_version",
@@ -99,6 +100,14 @@ DELIVERY_CONTINUITY_PROTOCOL_KEYS = (
     "boundary_result_schema",
     "routing_request_schema",
     "routing_result_schema",
+)
+DELIVERY_WORKSPACE_PROTOCOL_KEYS = (
+    "causality_schema",
+    "causality_request_schema",
+    "causality_result_schema",
+    "resolution_schema",
+    "settlement_requirement_schema",
+    "legacy_receipt_evidence_schema",
 )
 LEGACY_WRITER_FENCE_CONSTANT_NAMES = {
     "fence_schema": "LEGACY_COORDINATION_WRITER_FENCE_SCHEMA",
@@ -208,6 +217,20 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("delivery continuity protocol schemas must be non-empty strings")
     if len(set(delivery_continuity.values())) != len(delivery_continuity):
         raise ValueError("delivery continuity protocol schemas must be unique")
+    delivery_workspace = raw.get("delivery_workspace_protocol")
+    if (
+        not isinstance(delivery_workspace, dict)
+        or tuple(delivery_workspace) != DELIVERY_WORKSPACE_PROTOCOL_KEYS
+    ):
+        raise ValueError("delivery workspace protocol has unexpected fields or order")
+    if any(
+        not isinstance(delivery_workspace.get(key), str)
+        or not delivery_workspace[key]
+        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
+    ):
+        raise ValueError("delivery workspace protocol schemas must be non-empty strings")
+    if len(set(delivery_workspace.values())) != len(delivery_workspace):
+        raise ValueError("delivery workspace protocol schemas must be unique")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
@@ -262,6 +285,11 @@ def render_python(contract: dict[str, Any]) -> str:
         f"DELIVERY_{key.upper()}: Final[str] = {delivery_continuity[key]!r}"
         for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
     )
+    delivery_workspace = contract["delivery_workspace_protocol"]
+    delivery_workspace_constants = "\n".join(
+        f"DELIVERY_WORKSPACE_{key.upper()}: Final[str] = {delivery_workspace[key]!r}"
+        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
+    )
     return (
         '"""Generated from coordination_state_contract_v0.json; do not edit."""\n\n'
         "from __future__ import annotations\n\n"
@@ -279,6 +307,7 @@ def render_python(contract: dict[str, Any]) -> str:
         f"{local_shadow_constants}\n\n"
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
+        f"\n{delivery_workspace_constants}\n"
     )
 
 
@@ -309,6 +338,11 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.{key};"
         for key in DELIVERY_CONTINUITY_PROTOCOL_KEYS
     )
+    delivery_workspace_constants = "\n".join(
+        f"export const DELIVERY_WORKSPACE_{key.upper()} = "
+        f"COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.{key};"
+        for key in DELIVERY_WORKSPACE_PROTOCOL_KEYS
+    )
     return (
         "// Generated from coordination_state_contract_v0.json; do not edit.\n\n"
         "function deepFreeze<T>(value: T): T {\n"
@@ -324,6 +358,7 @@ def render_typescript(contract: dict[str, Any]) -> str:
         f"{local_shadow_constants}\n\n"
         f"{writer_fence_constants}\n"
         f"\n{delivery_continuity_constants}\n"
+        f"\n{delivery_workspace_constants}\n"
     )
 
 

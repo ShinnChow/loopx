@@ -149,6 +149,12 @@ COORDINATION_STATE_CONTRACT: Final = _freeze({'schema_version': 'loopx_coordinat
                                   'boundary_result_schema': 'loopx_delivery_boundary_result_v0',
                                   'routing_request_schema': 'loopx_delivery_routing_request_v0',
                                   'routing_result_schema': 'loopx_delivery_routing_result_v0'},
+ 'delivery_workspace_protocol': {'causality_schema': 'delivery_workspace_causality_v0',
+                                 'causality_request_schema': 'loopx_delivery_workspace_causality_request_v0',
+                                 'causality_result_schema': 'loopx_delivery_workspace_causality_result_v0',
+                                 'resolution_schema': 'delivery_workspace_resolution_v0',
+                                 'settlement_requirement_schema': 'settlement_workspace_requirement_v0',
+                                 'legacy_receipt_evidence_schema': 'legacy_settlement_receipt_evidence_v0'},
  'compatibility': {'unknown_field_policy': 'reject',
                    'field_removal_policy': 'maintainer_approval_required',
                    'markdown_role': 'human_workbench_and_compatibility_projection'}})
@@ -204,3 +210,10 @@ DELIVERY_CONTINUITY_RESULT_SCHEMA: Final[str] = 'loopx_delivery_continuity_resul
 DELIVERY_BOUNDARY_RESULT_SCHEMA: Final[str] = 'loopx_delivery_boundary_result_v0'
 DELIVERY_ROUTING_REQUEST_SCHEMA: Final[str] = 'loopx_delivery_routing_request_v0'
 DELIVERY_ROUTING_RESULT_SCHEMA: Final[str] = 'loopx_delivery_routing_result_v0'
+
+DELIVERY_WORKSPACE_CAUSALITY_SCHEMA: Final[str] = 'delivery_workspace_causality_v0'
+DELIVERY_WORKSPACE_CAUSALITY_REQUEST_SCHEMA: Final[str] = 'loopx_delivery_workspace_causality_request_v0'
+DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA: Final[str] = 'loopx_delivery_workspace_causality_result_v0'
+DELIVERY_WORKSPACE_RESOLUTION_SCHEMA: Final[str] = 'delivery_workspace_resolution_v0'
+DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA: Final[str] = 'settlement_workspace_requirement_v0'
+DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA: Final[str] = 'legacy_settlement_receipt_evidence_v0'

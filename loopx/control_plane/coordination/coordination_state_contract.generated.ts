@@ -173,6 +173,14 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "routing_request_schema": "loopx_delivery_routing_request_v0",
     "routing_result_schema": "loopx_delivery_routing_result_v0"
   },
+  "delivery_workspace_protocol": {
+    "causality_schema": "delivery_workspace_causality_v0",
+    "causality_request_schema": "loopx_delivery_workspace_causality_request_v0",
+    "causality_result_schema": "loopx_delivery_workspace_causality_result_v0",
+    "resolution_schema": "delivery_workspace_resolution_v0",
+    "settlement_requirement_schema": "settlement_workspace_requirement_v0",
+    "legacy_receipt_evidence_schema": "legacy_settlement_receipt_evidence_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -231,3 +239,10 @@ export const DELIVERY_CONTINUITY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.del
 export const DELIVERY_BOUNDARY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.boundary_result_schema;
 export const DELIVERY_ROUTING_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.routing_request_schema;
 export const DELIVERY_ROUTING_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_continuity_protocol.routing_result_schema;
+
+export const DELIVERY_WORKSPACE_CAUSALITY_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.causality_schema;
+export const DELIVERY_WORKSPACE_CAUSALITY_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.causality_request_schema;
+export const DELIVERY_WORKSPACE_CAUSALITY_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.causality_result_schema;
+export const DELIVERY_WORKSPACE_RESOLUTION_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.resolution_schema;
+export const DELIVERY_WORKSPACE_SETTLEMENT_REQUIREMENT_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.settlement_requirement_schema;
+export const DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA = COORDINATION_STATE_CONTRACT.delivery_workspace_protocol.legacy_receipt_evidence_schema;
