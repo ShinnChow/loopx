@@ -768,6 +768,12 @@
 .personal-task-kanban .personal-task-lane-scroll > button:last-child { border-bottom: 1px solid var(--pw-line); }
 .personal-task-kanban .personal-task-lane-scroll > button:last-child:hover { border-color: var(--pw-line-strong); }
 .personal-task-card { position: relative; }
+.personal-completed-window { position: relative; flex-shrink: 0; }
+.personal-completed-row { position: absolute; inset-inline: 0; padding-bottom: 8px; }
+.personal-completed-row > button { height: 100%; width: 100%; }
+.personal-completed-row > button > strong { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.personal-completed-footer { flex-shrink: 0; padding: 12px 4px; color: var(--pw-muted); font-size: 12px; text-align: center; }
+.personal-completed-footer button { min-height: 32px; border: 1px solid var(--pw-line); border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
 .personal-task-card > button { width: 100%; display: grid; align-items: start; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .personal-task-card-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .12s ease; }
 .personal-task-card:hover .personal-task-card-actions, .personal-task-card:focus-within .personal-task-card-actions { opacity: 1; }

@@ -629,6 +629,16 @@ async function installApi(page, { goalSubagentConfigurationEnabled = true } = {}
   await page.route("**/api/chat/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    if (url.pathname === "/api/chat/completed-todos") {
+      const total = url.searchParams.get("goal_id") === "progress-projection" ? 4087 : 0;
+      const offset = Number(url.searchParams.get("cursor") || 0);
+      const items = Array.from({ length: Math.min(40, total - offset) }, (_, position) => {
+        const index = offset + position;
+        return { todo_id: `todo_history_${index}`, text: index < 3 ? `Completed ${String.fromCharCode(65 + index)}` : `Completed historical Task ${index + 1}`, claimed_by: "example-agent", evidence: null, priority: null, task_class: "advancement_task" };
+      });
+      await route.fulfill({ json: { ok: true, total, items, next_cursor: offset + 40 < total ? String(offset + 40) : null } });
+      return;
+    }
     const periodicConfiguration = {
       schema_version: "periodic_report_machine_defaults_v0",
       enabled: true,
@@ -1877,9 +1887,33 @@ async function main() {
     const progressColumn = page.locator(".personal-object-list", { hasText: "待执行 / 进行中" });
     if ((await progressColumn.locator(".personal-task-card").count()) !== 2) throw new Error("Id-less long Todo was duplicated across compact and full projections");
     const completedColumn = page.locator(".personal-object-list", { hasText: "已完成" }).last();
-    await completedColumn.getByText("42", { exact: true }).waitFor({ state: "visible" });
+    const taskLaneScrollers = page.locator('.personal-task-kanban .personal-task-lane-scroll');
+    if (await taskLaneScrollers.count() !== 4) throw new Error('Every desktop Task lane must own a scroll region');
+    for (let laneIndex = 0; laneIndex < 4; laneIndex += 1) {
+      if (await taskLaneScrollers.nth(laneIndex).evaluate(element => getComputedStyle(element).overflowY) !== 'auto') {
+        throw new Error(`Task lane ${laneIndex + 1} does not support independent scrolling`);
+      }
+    }
+    await completedColumn.getByText("4087", { exact: true }).waitFor({ state: "visible" });
     await completedColumn.getByText("Completed A", { exact: true }).waitFor({ state: "visible" });
     if (await completedColumn.getByText("Completed Monitor", { exact: true }).count()) throw new Error("Completed continuous monitor leaked into the completed Tasks column");
+    const historyScroll = completedColumn.locator('.personal-task-lane-scroll');
+    for (let batch = 1; batch < 103; batch += 1) {
+      const response = page.waitForResponse(response => response.url().includes('/api/chat/completed-todos?') && response.url().includes(`cursor=${batch * 40}`));
+      await historyScroll.evaluate(element => { element.scrollTop = element.scrollHeight; });
+      await response;
+      await page.waitForFunction(minimum => {
+        const window = document.querySelector('[data-testid="completed-task-lane"] .personal-completed-window');
+        return window && Number.parseFloat(window.style.height) >= minimum;
+      }, Math.min(4087, (batch + 1) * 40) * 148);
+      if (await completedColumn.locator('.personal-completed-row').count() > 20) throw new Error('Completed history DOM grew with accumulated pages');
+    }
+    await historyScroll.evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await completedColumn.getByText('Completed historical Task 4087', { exact: true }).waitFor();
+    await completedColumn.getByText('已显示全部完成记录', { exact: true }).waitFor();
+    await page.screenshot({ path: resolve(outputDir, 'completed-history-4087.png'), fullPage: false, animations: 'disabled' });
+    await historyScroll.evaluate(element => { element.scrollTop = 0; });
+    await completedColumn.getByText('Completed A', { exact: true }).waitFor();
     await page.locator(".personal-goal-link", { hasText: "Multi Agent Projection" }).click();
     const multiAgentHeader = await page.locator(".personal-channel-title p").innerText();
     if (!multiAgentHeader.includes("2 个工作 Agent") || multiAgentHeader.includes("codex-older-lane ·")) {

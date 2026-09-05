@@ -470,7 +470,8 @@ assert.match(status, /recent_completed_advancement_items/, "The status schema ac
 assert.match(model, /doneTodoCount\??:/, "A Goal exposes the payload completed-Todo count");
 assert.match(dashboard, /personalAgentTodoFacts/, "Goal projection derives completion facts from the payload, not open-only item lists");
 assert.match(dashboard, /agentTodos:\s*\[\.\.\.goalAgentTodos,\s*\.\.\.agentTodoFacts\.recentCompleted\]/, "Recent completed Todos stay visible in the Goal board");
-assert.match(tasks, /Math\.max\(goal\.doneTodoCount \?\? 0, doneAgentTodos\.length\)/, "The completed column counts payload completions instead of open-only items");
+assert.match(tasks, /<CompletedTaskLane/, "Completed history is owned by its paginated lane");
+assert.match(source("./completed-task-lane.tsx"), /setTotal\(page\.total\)/, "The history count comes from the scoped full-history page, not its visible window");
 assert.doesNotMatch(tasks, /<span>\{doneAgentTodos\.length\}<\/span>/, "The completed column never reports a false zero");
 assert.match(
   dashboard,

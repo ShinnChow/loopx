@@ -8,6 +8,7 @@ import type {
   WorkspaceTimelineItem,
 } from "./personal-workspace-model";
 import { localizedAttentionAge, useWorkspaceI18n } from "./i18n";
+import { CompletedTaskLane } from "./completed-task-lane";
 
 function TaskLane({
   children,
@@ -91,6 +92,7 @@ function TaskLane({
  * Columns are states; cards open the same typed-preview drawer as the chat.
  */
 export function GoalTasksView({
+  historyEnabled = false,
   goal,
   items,
   onDraftTaskFromMessage,
@@ -101,6 +103,7 @@ export function GoalTasksView({
   selectedTodoId = null,
   userTodos,
 }: {
+  historyEnabled?: boolean;
   goal: WorkspaceGoal;
   items: WorkspaceTimelineItem[];
   onDraftTaskFromMessage?: (message: string) => void;
@@ -263,16 +266,7 @@ export function GoalTasksView({
         ))}
         {!scheduleItems.length ? <p className="personal-task-empty">{t("tasks.emptySchedules")}</p> : null}
       </TaskLane>
-      <TaskLane count={Math.max(goal.doneTodoCount ?? 0, doneAgentTodos.length)} label={t("tasks.completed")} tone="done">
-        {doneAgentTodos.map((todo) => (
-          <button aria-pressed={selectedTodoId === todo.todoId} className={selectedTodoId === todo.todoId ? "is-selected" : undefined} key={todo.todoId} onClick={() => onSelect({ item: { ...todo, goalId: goal.goalId, goalTitle: goal.title, ownerLabel: todo.claimedBy ?? goal.agentLabel ?? goal.agentId }, kind: "todo" })} ref={selectedTodoId === todo.todoId ? (element) => { selectedTodoRef.current = element; } : undefined} type="button">
-            <span className="is-done">✓</span><strong>{todo.text}</strong><small>{todo.claimedBy ?? goal.agentLabel ?? goal.agentId}</small>
-          </button>
-        ))}
-        {!doneAgentTodos.length ? <p className="personal-task-empty">{(goal.doneTodoCount ?? 0) > 0
-          ? t("tasks.completedSummary", { count: goal.doneTodoCount ?? 0 })
-          : t("tasks.emptyCompleted")}</p> : null}
-      </TaskLane>
+      <CompletedTaskLane key={`${goal.goalId}:${selectedLaneId}:${historyEnabled}`} goal={goal} agentId={selectedLaneId} seed={doneAgentTodos} enabled={historyEnabled} onSelect={onSelect} />
       </div>
       {isEmpty ? (
         <p className="personal-task-empty">
