@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..context_providers import build_context_provider
-from ..context_providers.base import ContextProvider, opaque_provider_ref
+from ..context_providers.base import ContextProvider
 from ...control_plane.runtime.public_safety import public_safe_compact_text
 from .extension_provider import (
     EXTENSION_CONTEXT_PROVIDER_ID,
@@ -431,21 +431,10 @@ def recall_profile_decision_context(
         }
 
     receipt = retrieval.public_packet()
-    results = [
-        {
-            "provider_ref": opaque_provider_ref(
-                provider=retrieval.provider,
-                namespace=retrieval.namespace,
-                resource_ref=item.resource_ref,
-            ),
-            "summary": item.summary,
-            "score": item.score,
-            "content": item.content,
-            "content_trust": "untrusted_advisory",
-            "content_may_instruct": False,
-        }
-        for item in retrieval.items
-    ]
+    results = retrieval.transient_results(
+        content_trust="untrusted_advisory",
+        content_may_instruct=False,
+    )
     return base | {
         "ok": retrieval.status == "completed",
         "status": retrieval.status,
@@ -456,7 +445,7 @@ def recall_profile_decision_context(
         "observed_at": retrieval.observed_at,
         "requested_limit": retrieval.requested_limit,
         "result_count": len(results),
-        "provider_readiness": getattr(provider, "readiness", None),
+        "provider_readiness": retrieval.provider_readiness,
         "retrieval_receipt": receipt,
         "results": results,
         "raw_content_returned": bool(results),

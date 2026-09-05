@@ -12,6 +12,7 @@ from loopx.capabilities.decision_context.extension_provider import (
     build_extension_context_provider,
 )
 from loopx.extensions.runtime import (
+    ExtensionCapabilityResolution,
     disable_extension,
     doctor_installed_extension,
     enable_extension,
@@ -22,6 +23,21 @@ from loopx.extensions.runtime import (
 OBSERVED_AT = "2026-09-05T00:00:00+00:00"
 PRIVATE_TRANSCRIPT = "Private peer reasoning remains transient."
 PRIVATE_RESOURCE_REF = "obelisk:codex:thread-a:message-1"
+READY_RESOLUTION = ExtensionCapabilityResolution(
+    status="ready",
+    extension_id="loopx-obelisk",
+    installed=True,
+    enabled=True,
+    doctor_verified=True,
+    next_action=None,
+    binding={
+        "schema_version": "loopx_extension_runtime_binding_v0",
+        "extension_id": "loopx-obelisk",
+        "provider_version": "0.1.0",
+        "timeout_seconds": 30,
+        "argv": ["loopx-obelisk"],
+    },
+)
 
 
 def _state_file(tmp_path: Path) -> Path:
@@ -117,14 +133,8 @@ def test_provider_resolves_one_lifecycle_binding_and_keeps_content_private(
     requests: list[dict[str, Any]] = []
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
 
     def execute(binding: object, *, request: dict[str, Any]) -> dict[str, Any]:
@@ -160,7 +170,7 @@ def test_provider_resolves_one_lifecycle_binding_and_keeps_content_private(
     public = result.public_packet()
     serialized = json.dumps(public, sort_keys=True)
 
-    assert provider.provider_id == "loopx-obelisk"
+    assert result.provider == "loopx-obelisk"
     assert requests[0]["scope_ref"] == "host-session:codex:thread-a"
     assert result.items[0].content == PRIVATE_TRANSCRIPT
     assert public["provider"] == "loopx-obelisk"
@@ -200,10 +210,63 @@ def test_provider_runs_only_through_enabled_doctor_ready_extension(
         {"provider": "extension"},
         runtime_root=tmp_path,
     )
-    receipt = _retrieve(unavailable).public_packet()
+    unavailable_retrieval = _retrieve(unavailable)
+    receipt = unavailable_retrieval.public_packet()
     assert receipt["status"] == "unavailable"
     assert receipt["reason_code"] == "extension_disabled"
-    assert unavailable.readiness["next_action"] == "enable_extension"
+    assert unavailable_retrieval.provider_readiness["next_action"] == (
+        "enable_extension"
+    )
+
+
+def test_retrieval_readiness_uses_the_same_lifecycle_snapshot(
+    tmp_path: Path,
+) -> None:
+    state_file = _state_file(tmp_path)
+    manifest = _manifest(
+        tmp_path / "extension.toml",
+        entrypoint=_provider_executable(tmp_path / "provider"),
+    )
+    install_extension(manifest, state_file=state_file, execute=True)
+    provider = build_extension_context_provider(
+        {"provider": "extension", "extension_id": "loopx-obelisk"},
+        runtime_root=tmp_path,
+    )
+    disable_extension(
+        "loopx-obelisk",
+        state_file=state_file,
+        execute=True,
+    )
+
+    retrieval = _retrieve(provider)
+
+    assert retrieval.status == "unavailable"
+    assert retrieval.reason_code == "extension_disabled"
+    assert retrieval.provider_readiness == {
+        "schema_version": "loopx_extension_provider_readiness_v0",
+        "extension_id": "loopx-obelisk",
+        "status": "extension_disabled",
+        "installed": True,
+        "enabled": False,
+        "doctor_verified": False,
+        "next_action": "enable_extension",
+    }
+
+
+def test_profile_config_cannot_override_extension_lifecycle_route(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(
+        ValueError, match="unsupported fields: extension_state_file"
+    ):
+        build_extension_context_provider(
+            {
+                "provider": "extension",
+                "extension_id": "loopx-obelisk",
+                "extension_state_file": str(tmp_path / "other-state.json"),
+            },
+            runtime_root=tmp_path / "invocation-runtime",
+        )
 
 
 def test_missing_extension_is_typed_unavailable_without_running_provider(
@@ -211,14 +274,14 @@ def test_missing_extension_is_typed_unavailable_without_running_provider(
 ) -> None:
     config = {"provider": "extension", "extension_id": "loopx-obelisk"}
     provider = build_extension_context_provider(config, runtime_root=tmp_path)
-    receipt = _retrieve(provider).public_packet()
+    missing_retrieval = _retrieve(provider)
+    receipt = missing_retrieval.public_packet()
 
     assert receipt["reason_code"] == "extension_not_installed"
     assert receipt["search_performed"] is False
     assert receipt["read_performed"] is False
-    assert provider.readiness == {
-        "schema_version": "decision_context_provider_readiness_v0",
-        "provider_kind": "extension",
+    assert missing_retrieval.provider_readiness == {
+        "schema_version": "loopx_extension_provider_readiness_v0",
         "extension_id": "loopx-obelisk",
         "status": "extension_not_installed",
         "installed": False,
@@ -236,8 +299,9 @@ def test_missing_extension_is_typed_unavailable_without_running_provider(
     install_extension(manifest, state_file=state_file, execute=True)
     ready = build_extension_context_provider(config, runtime_root=tmp_path)
 
-    assert ready.readiness["status"] == "ready"
-    assert _retrieve(ready).status == "completed"
+    ready_retrieval = _retrieve(ready)
+    assert ready_retrieval.status == "completed"
+    assert ready_retrieval.provider_readiness["status"] == "ready"
 
 
 def test_stale_doctor_degrades_then_recovers_without_profile_change(
@@ -255,8 +319,12 @@ def test_stale_doctor_degrades_then_recovers_without_profile_change(
         {"provider": "extension", "extension_id": "loopx-obelisk"},
         runtime_root=tmp_path,
     )
-    assert _retrieve(unavailable).reason_code == "extension_doctor_not_ready"
-    assert unavailable.readiness["next_action"] == "run_extension_doctor"
+    unavailable_retrieval = _retrieve(unavailable)
+    assert unavailable_retrieval.reason_code == "extension_doctor_not_ready"
+    assert (
+        unavailable_retrieval.provider_readiness["next_action"]
+        == "run_extension_doctor"
+    )
 
     doctor_installed_extension(
         "loopx-obelisk",
@@ -268,8 +336,9 @@ def test_stale_doctor_degrades_then_recovers_without_profile_change(
         runtime_root=tmp_path,
     )
 
-    assert ready.readiness["status"] == "ready"
-    assert _retrieve(ready).status == "completed"
+    ready_retrieval = _retrieve(ready)
+    assert ready_retrieval.status == "completed"
+    assert ready_retrieval.provider_readiness["status"] == "ready"
 
 
 def test_disabled_extension_recovers_after_enable_without_config_change(
@@ -285,14 +354,18 @@ def test_disabled_extension_recovers_after_enable_without_config_change(
     disable_extension("loopx-obelisk", state_file=state_file, execute=True)
 
     unavailable = build_extension_context_provider(config, runtime_root=tmp_path)
-    assert _retrieve(unavailable).reason_code == "extension_disabled"
-    assert unavailable.readiness["next_action"] == "enable_extension"
+    unavailable_retrieval = _retrieve(unavailable)
+    assert unavailable_retrieval.reason_code == "extension_disabled"
+    assert unavailable_retrieval.provider_readiness["next_action"] == (
+        "enable_extension"
+    )
 
     enable_extension("loopx-obelisk", state_file=state_file, execute=True)
     ready = build_extension_context_provider(config, runtime_root=tmp_path)
 
-    assert ready.readiness["status"] == "ready"
-    assert _retrieve(ready).status == "completed"
+    ready_retrieval = _retrieve(ready)
+    assert ready_retrieval.status == "completed"
+    assert ready_retrieval.provider_readiness["status"] == "ready"
 
 
 def test_provider_rejects_unbounded_or_extra_extension_output(
@@ -301,14 +374,8 @@ def test_provider_rejects_unbounded_or_extra_extension_output(
 ) -> None:
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
     monkeypatch.setattr(
         provider_module,
@@ -337,14 +404,8 @@ def test_provider_rejects_missing_response_or_item_fields(
 ) -> None:
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
     responses = iter(
         [
@@ -391,14 +452,8 @@ def test_provider_rejects_non_finite_score(
 ) -> None:
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
     monkeypatch.setattr(
         provider_module,
@@ -429,30 +484,24 @@ def test_provider_rejects_non_finite_score(
 
 @pytest.mark.parametrize(
     "timeout_seconds",
-    [0.5, 1.5, float("nan"), float("inf")],
+    [0.5, float("nan"), float("inf")],
 )
-def test_provider_rejects_timeout_that_generic_extension_runtime_cannot_enforce(
+def test_provider_rejects_invalid_timeout(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     timeout_seconds: float,
 ) -> None:
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
     provider = provider_module.DecisionContextExtensionProvider(
         state_file=_state_file(tmp_path),
         extension_id="loopx-obelisk",
     )
 
-    with pytest.raises(ValueError, match="whole number of at least 1"):
+    with pytest.raises(ValueError, match="between 1 and 120"):
         provider.retrieve(
             namespace="peer-session",
             scope_ref="host-session:codex:thread-a",
@@ -462,6 +511,49 @@ def test_provider_rejects_timeout_that_generic_extension_runtime_cannot_enforce(
             timeout_seconds=timeout_seconds,
             observed_at=OBSERVED_AT,
         )
+
+
+def test_provider_preserves_fractional_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        provider_module,
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
+    )
+
+    def execute(binding: object, *, request: dict[str, Any]) -> dict[str, Any]:
+        assert isinstance(binding, dict)
+        assert binding["timeout_seconds"] == 1.5
+        requests.append(request)
+        return {
+            "schema_version": "decision_context_advisory_retrieve_response_v0",
+            "ok": True,
+            "status": "completed",
+            "reason_code": None,
+            "items": [],
+        }
+
+    monkeypatch.setattr(provider_module, "execute_extension_runtime_binding", execute)
+    provider = provider_module.DecisionContextExtensionProvider(
+        state_file=_state_file(tmp_path),
+        extension_id="loopx-obelisk",
+    )
+
+    result = provider.retrieve(
+        namespace="peer-session",
+        scope_ref="host-session:codex:thread-a",
+        query="current implementation decision",
+        query_summary="peer task decision",
+        max_results=4,
+        timeout_seconds=1.5,
+        observed_at=OBSERVED_AT,
+    )
+
+    assert result.status == "completed"
+    assert requests[0]["timeout_seconds"] == 1.5
 
 
 def test_provider_rejects_non_integer_result_limit() -> None:
@@ -498,14 +590,8 @@ def test_provider_rejects_inconsistent_status_reason_code(
 ) -> None:
     monkeypatch.setattr(
         provider_module,
-        "resolve_extension_binding",
-        lambda *_, **__: {
-            "schema_version": "loopx_extension_runtime_binding_v0",
-            "extension_id": "loopx-obelisk",
-            "provider_version": "0.1.0",
-            "timeout_seconds": 30,
-            "argv": ["loopx-obelisk"],
-        },
+        "resolve_optional_capability_binding",
+        lambda **_: READY_RESOLUTION,
     )
     monkeypatch.setattr(
         provider_module,

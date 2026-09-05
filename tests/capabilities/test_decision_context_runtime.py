@@ -597,6 +597,14 @@ def test_ephemeral_recall_overrides_scope_without_scanning_or_profile_write(
     assert packet["results"][0]["content_trust"] == "untrusted_advisory"
     assert packet["results"][0]["content_may_instruct"] is False
     assert packet["raw_content_returned"] is True
+    assert [
+        {
+            key: value
+            for key, value in item.items()
+            if key in {"provider_ref", "summary", "score"}
+        }
+        for item in packet["results"]
+    ] == packet["retrieval_receipt"]["results"]
     assert packet["raw_content_persisted"] is False
     assert "content" not in packet["retrieval_receipt"]["results"][0]
     assert "thread-b" not in json.dumps(packet["retrieval_receipt"])
@@ -773,8 +781,7 @@ def test_ephemeral_recall_extension_unavailable_returns_degraded_receipt(
     assert packet["retrieval_receipt"]["search_performed"] is False
     assert packet["retrieval_receipt"]["read_performed"] is False
     assert packet["provider_readiness"] == {
-        "schema_version": "decision_context_provider_readiness_v0",
-        "provider_kind": "extension",
+        "schema_version": "loopx_extension_provider_readiness_v0",
         "extension_id": "loopx-obelisk",
         "status": "extension_not_installed",
         "installed": False,
