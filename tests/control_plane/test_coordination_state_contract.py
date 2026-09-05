@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 import runpy
 import subprocess
-import runpy
 
 import pytest
 
@@ -90,6 +89,10 @@ def test_generated_coordination_bindings_are_current() -> None:
         ("local_authority_protocol", "mutation_request_schema", "across families"),
         ("local_authority_protocol", "promotion_receipt_schema", "across families"),
         ("runtime_shadow_protocol", "inspect_request_schema", "must be unique"),
+        ("local_authority_shadow_protocol", "outbox_entry_schema", "across families"),
+        ("task_lease_protocol", "acquire_request_schema", "across families"),
+        ("capability_hook_protocol", "intent_schema", "across families"),
+        ("replan_settlement_protocol", "result_schema", "across families"),
     ],
 )
 def test_generator_rejects_protocol_identity_collisions(
