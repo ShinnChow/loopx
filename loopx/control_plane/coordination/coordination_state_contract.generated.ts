@@ -185,6 +185,17 @@ export const COORDINATION_STATE_CONTRACT = deepFreeze({
     "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
     "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"
   },
+  "capability_hook_protocol": {
+    "registration_schema": "loopx_capability_hook_registration_v0",
+    "interaction_result_schema": "loopx_interaction_projection_hook_result_v0",
+    "turn_start_registration_schema": "loopx_turn_start_capability_hook_registration_v1",
+    "turn_start_result_schema": "loopx_turn_start_capability_hook_result_v0",
+    "post_writeback_registration_schema": "loopx_post_writeback_capability_hook_registration_v0",
+    "post_writeback_input_schema": "loopx_post_writeback_capability_hook_input_v0",
+    "post_writeback_result_schema": "loopx_post_writeback_capability_hook_result_v0",
+    "post_writeback_receipt_schema": "loopx_post_writeback_capability_hook_receipt_v0",
+    "intent_schema": "loopx_capability_intent_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
@@ -253,3 +264,13 @@ export const DELIVERY_WORKSPACE_LEGACY_RECEIPT_EVIDENCE_SCHEMA = COORDINATION_ST
 
 export const TASK_LEASE_ACQUIRE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.acquire_request_schema;
 export const TASK_LEASE_LIFECYCLE_REQUEST_SCHEMA = COORDINATION_STATE_CONTRACT.task_lease_protocol.lifecycle_request_schema;
+
+export const CAPABILITY_HOOK_REGISTRATION_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.registration_schema;
+export const CAPABILITY_HOOK_INTERACTION_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.interaction_result_schema;
+export const CAPABILITY_HOOK_TURN_START_REGISTRATION_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.turn_start_registration_schema;
+export const CAPABILITY_HOOK_TURN_START_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.turn_start_result_schema;
+export const CAPABILITY_HOOK_POST_WRITEBACK_REGISTRATION_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_registration_schema;
+export const CAPABILITY_HOOK_POST_WRITEBACK_INPUT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_input_schema;
+export const CAPABILITY_HOOK_POST_WRITEBACK_RESULT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_result_schema;
+export const CAPABILITY_HOOK_POST_WRITEBACK_RECEIPT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.post_writeback_receipt_schema;
+export const CAPABILITY_HOOK_INTENT_SCHEMA = COORDINATION_STATE_CONTRACT.capability_hook_protocol.intent_schema;

@@ -164,6 +164,17 @@
     "acquire_request_schema": "loopx_task_lease_acquire_native_v0",
     "lifecycle_request_schema": "loopx_task_lease_lifecycle_native_v0"
   },
+  "capability_hook_protocol": {
+    "registration_schema": "loopx_capability_hook_registration_v0",
+    "interaction_result_schema": "loopx_interaction_projection_hook_result_v0",
+    "turn_start_registration_schema": "loopx_turn_start_capability_hook_registration_v1",
+    "turn_start_result_schema": "loopx_turn_start_capability_hook_result_v0",
+    "post_writeback_registration_schema": "loopx_post_writeback_capability_hook_registration_v0",
+    "post_writeback_input_schema": "loopx_post_writeback_capability_hook_input_v0",
+    "post_writeback_result_schema": "loopx_post_writeback_capability_hook_result_v0",
+    "post_writeback_receipt_schema": "loopx_post_writeback_capability_hook_receipt_v0",
+    "intent_schema": "loopx_capability_intent_v0"
+  },
   "compatibility": {
     "unknown_field_policy": "reject",
     "field_removal_policy": "maintainer_approval_required",
