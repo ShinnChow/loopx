@@ -54,13 +54,13 @@ def validate_request(value: object) -> dict[str, Any]:
     raw_timeout = value.get("timeout_seconds")
     if isinstance(raw_limit, bool) or not isinstance(raw_limit, int):
         raise ValueError("max_results must be an integer")
-    if isinstance(raw_timeout, bool) or not isinstance(raw_timeout, int):
-        raise ValueError("timeout_seconds must be an integer")
+    if isinstance(raw_timeout, bool) or not isinstance(raw_timeout, (int, float)):
+        raise ValueError("timeout_seconds must be numeric")
     limit = raw_limit
-    timeout_seconds = raw_timeout
+    timeout_seconds = float(raw_timeout)
     if not 1 <= limit <= MAX_RESULTS:
         raise ValueError(f"max_results must be between 1 and {MAX_RESULTS}")
-    if not 1 <= timeout_seconds <= 120:
+    if not math.isfinite(timeout_seconds) or not 1 <= timeout_seconds <= 120:
         raise ValueError("timeout_seconds must be between 1 and 120")
     return {
         "schema_version": REQUEST_SCHEMA,

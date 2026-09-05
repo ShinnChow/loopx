@@ -6,6 +6,8 @@ on:
       - ".github/workflows/package-smoke.yml"
       - "packages/loopx-repo-health/**"
       - "packages/loopx-obelisk/**"
+      - "loopx/capabilities/decision_context/extension_provider.py"
+      - "loopx/extensions/runtime.py"
   push:
     branches:
       - main
@@ -13,6 +15,8 @@ on:
       - ".github/workflows/package-smoke.yml"
       - "packages/loopx-repo-health/**"
       - "packages/loopx-obelisk/**"
+      - "loopx/capabilities/decision_context/extension_provider.py"
+      - "loopx/extensions/runtime.py"
 
 permissions:
   contents: read
@@ -57,6 +61,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+
+      - name: Install contract validator
+        run: python -m pip install --disable-pip-version-check "jsonschema>=4.23,<5"
 
       - name: Compile package modules
         run: >-

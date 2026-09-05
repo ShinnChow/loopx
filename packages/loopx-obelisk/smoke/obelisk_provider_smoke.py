@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE_ROOT / "src"))
 
@@ -27,7 +29,14 @@ REQUEST = {
 }
 
 
+def _validate_schema(instance: object, filename: str) -> None:
+    schema = json.loads((PACKAGE_ROOT / "schemas" / filename).read_text())
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(instance)
+
+
 def main() -> None:
+    _validate_schema(REQUEST, "request.schema.json")
     calls: list[tuple[list[str], float]] = []
     query_paths: list[Path] = []
 
@@ -122,6 +131,18 @@ def main() -> None:
             }
         ],
     }
+    _validate_schema(response, "response.schema.json")
+
+    fractional = dict(REQUEST, timeout_seconds=1.5)
+    _validate_schema(fractional, "request.schema.json")
+    fractional_response = retrieve(
+        fractional,
+        obelisk_bin="obelisk",
+        timeout_cap_seconds=5,
+        runner=runner,
+    )
+    assert calls[-1][1] == 1.5
+    _validate_schema(fractional_response, "response.schema.json")
 
     invalid = dict(REQUEST, scope_ref="codex://threads/thread-a")
     before = len(calls)
@@ -135,7 +156,6 @@ def main() -> None:
 
     for field, value, expected_error in (
         ("max_results", 1.5, "max_results must be an integer"),
-        ("timeout_seconds", 1.5, "timeout_seconds must be an integer"),
         ("timeout_seconds", 0, "timeout_seconds must be between"),
     ):
         malformed = dict(REQUEST, **{field: value})
