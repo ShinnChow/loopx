@@ -50,6 +50,23 @@ Default Markdown capture still emits v0; this PR neither rewrites stored heads
 nor auto-promotes a goal. The schema split is not permission to drop v0
 provenance or change legacy ordering during a later migration.
 
+### Long-goal persistence is part of the migration payoff
+
+The product target is at least ten elapsed days per goal, not a short-lived
+transaction demo. The shared-authority RFC's
+[Section 7.2](./shared-goal-authority-state-provider-v0.md#72-ten-day-goals-local-storage-qualification-target-proposal)
+owns the workload, performance budgets, retention and actual-soak acceptance;
+keep changing capacity numbers there rather than duplicating them here.
+
+Start a cohesive local-persistence slice alongside the provider-first Todo
+caller: qualify an embedded transactional store (SQLite first candidate),
+bounded live head/receipt lookup, crash-safe checkpoints and exact historical
+readback. File-v0 remains the conformance/import baseline. Merely replacing
+Python with TypeScript, swapping databases while retaining ever-growing heads,
+or passing accelerated volume tests is not ten-day continuity evidence.
+Local promotion waits for both volume and elapsed-time qualification; it does
+not wait for a PostgreSQL service and never expires receipts at day ten.
+
 ### Next delivery sequence
 
 1. **One provider-first Todo transaction family.** Route native create, claim,
@@ -59,8 +76,10 @@ provenance or change legacy ordering during a later migration.
    decisions. A schema or constants-only PR does not satisfy this exit.
 2. **Qualification before activation.** Join that path with the shared-authority
    RFC's explicit v0 import, consumer parity, writer fencing, capture/projection
-   outbox recovery, bounded retention, and fenced export. File qualification
-   does not wait for PostgreSQL service readiness. No default authority flip.
+   outbox recovery and fenced export. Integrate the local-persistence slice
+   above, including historical receipt retention, volume and >=10-day soak
+   evidence. File-v0 conformance is insufficient for long-goal promotion. No
+   default authority flip or dependency on PostgreSQL service readiness.
 3. **Retire the bridge, then converge entrypoints.** Delete the replaced
    reference aggregate and Python facades when their last callers switch;
    reuse the same kernel from native CLI/App and optional daemon. Report

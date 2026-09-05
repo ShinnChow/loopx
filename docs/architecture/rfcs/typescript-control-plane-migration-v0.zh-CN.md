@@ -42,6 +42,19 @@ CLI lifecycle cutover。
 输出 v0；本 PR 不改写已存 head，也不自动晋升 goal。schema 分层不等于允许后续迁移
 丢失 v0 provenance 或改变旧排序。
 
+### 长程持久化也是迁移收益的一部分
+
+产品目标是单个 goal 至少持续十个自然日。shared-authority RFC 的
+[第 7.2 节](./shared-goal-authority-state-provider-v0.zh-CN.md#72-十天-goal本地存储资格化目标提案)
+统一维护负载、性能预算、保留策略和真实 soak 验收；变化的容量数字不在此重复维护。
+
+与 provider-first Todo caller 同期推进完整本地持久化切片：资格化嵌入式事务存储
+（SQLite 为首选候选）、有界 live head/receipt lookup、crash-safe checkpoint 与精确
+历史 readback。file-v0 保留作 conformance/import 基线。只把 Python 改为 TypeScript、
+换数据库但保留不断增长的 head，或只通过加速容量测试，都不证明十天连续性。
+本地晋升等待容量与自然时间双重资格化，不等待 PostgreSQL 服务，也不在第十天使
+receipt 过期。
+
 ### 下一步交付顺序
 
 1. **一组 provider-first Todo 完整事务。** 原生 create、claim、update、
@@ -49,8 +62,9 @@ CLI lifecycle cutover。
    每个内聚的纵向切片包含真实 CLI caller、replay/CAS/error 测试，并删除被替代的
    Python decision。仅统一 schema 或常量不满足退出条件。
 2. **先资格化，再启用。** 与 shared-authority RFC 的显式 v0 import、consumer
-   parity、writer fencing、capture/projection outbox recovery、有界 retention、
-   fenced export 汇合。file 资格化不等待 PostgreSQL service 就绪；不默认切换 authority。
+   parity、writer fencing、capture/projection outbox recovery 和 fenced export 汇合。
+   集成上述本地持久化切片，包含历史 receipt 保留、容量与 >=10 天 soak 证据。
+   file-v0 conformance 不足以支持长程晋升；不默认切换 authority，也不依赖 PostgreSQL service。
 3. **删除 bridge，再收敛入口。** 最后一个 caller 切换后，删除被替代的 reference
    aggregate 与 Python facade；native CLI/App 和可选 daemon 复用同一 kernel。
    每个切片报告删除的 product LOC、新增 bridge LOC、crossings 与剩余删除条件。
