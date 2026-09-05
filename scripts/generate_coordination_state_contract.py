@@ -124,6 +124,8 @@ def load_contract() -> dict[str, Any]:
         raise ValueError("runtime shadow protocol schemas must be non-empty strings")
     if len(set(runtime_shadow.values())) != len(runtime_shadow):
         raise ValueError("runtime shadow protocol schemas must be unique")
+    if set(protocol.values()) & set(runtime_shadow.values()):
+        raise ValueError("protocol schemas must be unique across families")
     if raw.get("compatibility") != EXPECTED_COMPATIBILITY:
         raise ValueError("coordination contract compatibility policy mismatch")
     projection = raw["todo_projection_metadata"]
