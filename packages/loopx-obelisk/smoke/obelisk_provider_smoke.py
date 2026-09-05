@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -16,11 +17,12 @@ sys.path.insert(0, str(PACKAGE_ROOT / "src"))
 from loopx_obelisk.contract import doctor, retrieve  # noqa: E402
 
 
+SESSION_ID = "codex:thread-a"
 REQUEST = {
     "schema_version": "decision_context_advisory_retrieve_request_v0",
     "operation": "retrieve",
     "namespace": "peer-session",
-    "scope_ref": "host-session:codex:thread-a",
+    "scope_ref": f"host-session:{SESSION_ID}",
     "query": "current implementation decision",
     "query_summary": "peer task decision",
     "max_results": 2,
@@ -48,7 +50,7 @@ def main() -> None:
         query_path = Path(argv[2])
         query_paths.append(query_path)
         script = query_path.read_text(encoding="utf-8")
-        assert '"sessionId": "codex:thread-a"' in script, script
+        assert f'"sessionId": "{SESSION_ID}"' in script, script
         assert '"source": "codex"' in script, script
         assert '"includeMeta": false' in script, script
         assert '"includeInactive": false' in script, script
@@ -65,7 +67,7 @@ def main() -> None:
                     "role": "assistant",
                 },
                 "session": {
-                    "id": "codex:thread-a",
+                    "id": SESSION_ID,
                     "source": "codex",
                     "is_invoking": True,
                 },
@@ -78,7 +80,7 @@ def main() -> None:
                     "content_type": "thinking",
                     "role": "assistant",
                 },
-                "session": {"id": "codex:thread-a", "source": "codex"},
+                "session": {"id": SESSION_ID, "source": "codex"},
                 "rank": -0.9,
             },
             {
@@ -98,7 +100,7 @@ def main() -> None:
                     "content_type": "text",
                     "role": "assistant",
                 },
-                "session": {"id": "codex:thread-a", "source": "codex"},
+                "session": {"id": SESSION_ID, "source": "codex"},
                 "rank": -0.75,
             }
         ]
@@ -124,7 +126,7 @@ def main() -> None:
         "reason_code": None,
         "items": [
             {
-                "resource_ref": "obelisk:codex:thread-a:message-1",
+                "resource_ref": f"obelisk:{SESSION_ID}:message-1",
                 "summary": "Historical Codex task assistant",
                 "content": "The source task retained the extension boundary.",
                 "score": -0.75,
@@ -141,7 +143,7 @@ def main() -> None:
         timeout_cap_seconds=5,
         runner=runner,
     )
-    assert calls[-1][1] == 1.5
+    assert math.isclose(calls[-1][1], 1.5)
     _validate_schema(fractional_response, "response.schema.json")
 
     invalid = dict(REQUEST, scope_ref="codex://threads/thread-a")

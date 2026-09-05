@@ -63,7 +63,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install contract validator
-        run: python -m pip install --disable-pip-version-check "jsonschema>=4.23,<5"
+        run: python -m pip install --disable-pip-version-check "jsonschema==4.26.0"
 
       - name: Compile package modules
         run: >-

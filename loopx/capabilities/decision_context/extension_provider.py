@@ -107,24 +107,34 @@ def _positive_timeout(value: object) -> float:
     return timeout
 
 
-def _response_items(
+def _validate_exact_fields(
+    value: Mapping[str, Any],
+    *,
+    expected: set[str],
+    subject: str,
+) -> None:
+    actual = set(value)
+    unexpected = sorted(actual - expected)
+    missing = sorted(expected - actual)
+    if not unexpected and not missing:
+        return
+    details = []
+    if unexpected:
+        details.append("unsupported: " + ", ".join(unexpected))
+    if missing:
+        details.append("missing: " + ", ".join(missing))
+    raise ValueError(
+        f"extension context provider {subject} fields are invalid: "
+        + "; ".join(details)
+    )
+
+
+def _validated_response_envelope(
     response: Mapping[str, Any],
     *,
     requested_limit: int,
-) -> tuple[ContextProviderItem, ...]:
-    response_fields = set(response)
-    unexpected = sorted(response_fields - _RESPONSE_FIELDS)
-    missing = sorted(_RESPONSE_FIELDS - response_fields)
-    if unexpected or missing:
-        details = []
-        if unexpected:
-            details.append("unsupported: " + ", ".join(unexpected))
-        if missing:
-            details.append("missing: " + ", ".join(missing))
-        raise ValueError(
-            "extension context provider response fields are invalid: "
-            + "; ".join(details)
-        )
+) -> list[object]:
+    _validate_exact_fields(response, expected=_RESPONSE_FIELDS, subject="response")
     if (
         response.get("schema_version")
         != DECISION_CONTEXT_ADVISORY_RESPONSE_SCHEMA
@@ -149,46 +159,44 @@ def _response_items(
         raise ValueError(
             "an unavailable extension context provider cannot return items"
         )
+    return raw_items
 
-    items: list[ContextProviderItem] = []
-    for raw_item in raw_items:
-        if not isinstance(raw_item, Mapping):
-            raise ValueError("extension context provider items must be objects")
-        item_fields = set(raw_item)
-        item_unexpected = sorted(item_fields - _ITEM_FIELDS)
-        item_missing = sorted(_ITEM_FIELDS - item_fields)
-        if item_unexpected or item_missing:
-            details = []
-            if item_unexpected:
-                details.append("unsupported: " + ", ".join(item_unexpected))
-            if item_missing:
-                details.append("missing: " + ", ".join(item_missing))
-            raise ValueError(
-                "extension context provider item fields are invalid: "
-                + "; ".join(details)
-            )
-        summary = public_safe_compact_text(raw_item.get("summary"), limit=220)
-        if summary is None:
-            raise ValueError(
-                "extension context provider item summary is not public safe"
-            )
-        items.append(
-            ContextProviderItem(
-                resource_ref=_bounded_text(
-                    raw_item.get("resource_ref"),
-                    field="resource_ref",
-                    maximum=MAX_EXTENSION_CONTEXT_REF_CHARS,
-                ),
-                summary=summary,
-                content=_bounded_text(
-                    raw_item.get("content"),
-                    field="content",
-                    maximum=MAX_EXTENSION_CONTEXT_CONTENT_CHARS,
-                ),
-                score=_score(raw_item.get("score")),
-            )
+
+def _response_item(raw_item: object) -> ContextProviderItem:
+    if not isinstance(raw_item, Mapping):
+        raise ValueError("extension context provider items must be objects")
+    _validate_exact_fields(raw_item, expected=_ITEM_FIELDS, subject="item")
+    summary = public_safe_compact_text(raw_item.get("summary"), limit=220)
+    if summary is None:
+        raise ValueError(
+            "extension context provider item summary is not public safe"
         )
-    return tuple(items)
+    return ContextProviderItem(
+        resource_ref=_bounded_text(
+            raw_item.get("resource_ref"),
+            field="resource_ref",
+            maximum=MAX_EXTENSION_CONTEXT_REF_CHARS,
+        ),
+        summary=summary,
+        content=_bounded_text(
+            raw_item.get("content"),
+            field="content",
+            maximum=MAX_EXTENSION_CONTEXT_CONTENT_CHARS,
+        ),
+        score=_score(raw_item.get("score")),
+    )
+
+
+def _response_items(
+    response: Mapping[str, Any],
+    *,
+    requested_limit: int,
+) -> tuple[ContextProviderItem, ...]:
+    raw_items = _validated_response_envelope(
+        response,
+        requested_limit=requested_limit,
+    )
+    return tuple(_response_item(raw_item) for raw_item in raw_items)
 
 
 class DecisionContextExtensionProvider:
