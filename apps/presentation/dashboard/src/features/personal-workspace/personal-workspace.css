@@ -655,6 +655,9 @@
 .personal-capability-detail h2 { margin: 2px 0 4px; font-size: 17px; }
 .personal-capability-detail p { margin: 0; color: var(--pw-muted); font-size: 12px; line-height: 1.55; }
 .personal-capability-value-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 18px; }
+.personal-capability-raw-values { border-top: 1px solid var(--pw-line); }
+.personal-capability-raw-values > summary { cursor: pointer; padding: 16px 18px; color: var(--pw-text); font-size: 12px; }
+.personal-capability-raw-values > summary:focus-visible { outline: 2px solid var(--pw-blue); outline-offset: -2px; }
 .personal-capability-value-grid section { min-width: 0; }
 .personal-capability-value-grid strong, .personal-capability-field-summary > strong { font-size: 11px; }
 .personal-capability-value-grid pre { overflow: auto; min-height: 72px; max-height: 220px; margin: 7px 0 0; padding: 11px; border: 1px solid var(--pw-line); border-radius: 9px; background: #faf9f6; color: var(--pw-text); font-size: 10.5px; line-height: 1.5; }

@@ -653,7 +653,9 @@ async function installApi(page, { goalSubagentConfigurationEnabled = true } = {}
       },
       capability_catalog: {
         schema_version: "capability_configuration_catalog_v0",
-        capabilities: [periodicReportCapability({ machineCurrent: periodicConfiguration })],
+        capabilities: goalCapabilityCatalog().map((capability) => capability.capability_id === "periodic_report"
+          ? periodicReportCapability({ machineCurrent: periodicConfiguration })
+          : capability),
       },
       changed_namespaces: [],
       machine_configuration: {
@@ -1928,6 +1930,7 @@ async function main() {
     if (await page.locator(".personal-workspace-shell").count()) throw new Error("Unified Goal capability action did not open the Settings surface");
     await page.getByRole("heading", { level: 2, name: "周期报告", exact: true }).waitFor({ state: "visible" });
     const goalCapabilityOrder = await page.locator(".personal-capability-list button small").allTextContents();
+    if (await page.locator(".personal-capability-editor-status").count()) throw new Error("Editable Goal settings must not show internal editor-contract notices");
     const expectedGoalCapabilities = [
       "change_quality_qualification", "explore_graph", "explore_harness", "lark_event_inbox",
       "lark_kanban_heartbeat_sync", "local_authority_shadow", "multi_subagent",
@@ -1986,6 +1989,7 @@ async function main() {
     if (multiSubagentApply?.expected_plan_revision !== "sha256:goal-plan-multi_subagent") {
       throw new Error(`Unified Goal capability apply lost its reviewed sub-agent revision: ${JSON.stringify(multiSubagentApply)}`);
     }
+    await page.locator(".personal-capability-raw-values > summary").click();
     await page.locator(".personal-capability-value-grid section").first().getByText(/validation/u).waitFor({ state: "visible" });
     await page.getByRole("button", { name: "返回工作区", exact: true }).click();
     await page.getByRole("button", { name: "Tasks", current: "page" }).waitFor({ state: "visible" });
@@ -2007,6 +2011,21 @@ async function main() {
     await page.getByRole("button", { name: /机器配置/ }).click();
     await page.getByRole("heading", { level: 1, name: "机器配置", exact: true }).waitFor({ state: "visible" });
     await page.getByRole("heading", { level: 2, name: "周期报告", exact: true }).waitFor({ state: "visible" });
+    const machineCatalog = page.getByRole("navigation", { name: "机器能力目录" });
+    if (await page.locator(".personal-capability-editor-status").count()) throw new Error("Editable machine settings must not show internal editor-contract notices");
+    if (await machineCatalog.getByRole("button").count() !== goalCapabilityCatalog().length) {
+      throw new Error("Machine settings hid Goal-only capabilities from the shared catalog");
+    }
+    const requestsBeforeReadOnly = api.machineConfigurationRequests.length;
+    await machineCatalog.getByRole("button", { name: /multi_subagent/ }).click();
+    await page.getByText(/此能力目前仅支持 Goal 级配置/u).waitFor({ state: "visible" });
+    if (await page.getByRole("button", { name: "预览变更", exact: true }).count()
+        || await page.locator("#machine-configuration-json").count()
+        || await page.getByLabel(/^启用$/u).count()
+        || api.machineConfigurationRequests.length !== requestsBeforeReadOnly) {
+      throw new Error("Goal-only capability exposed a machine mutation path");
+    }
+    await machineCatalog.getByRole("button", { name: /periodic_report/ }).click();
     for (const label of [/^启用$/u, /^报告 Profile/u, /^Goal Channel 路由/u, /^时区/u]) {
       await page.getByLabel(label).waitFor({ state: "visible" });
     }
@@ -2029,6 +2048,16 @@ async function main() {
     await page.getByRole("radio", { name: /English/ }).click();
     await page.getByRole("button", { name: /Machine configuration/ }).click();
     await page.getByRole("heading", { level: 2, name: "Periodic reports", exact: true }).waitFor({ state: "visible" });
+    const rawValues = page.locator(".personal-capability-raw-values");
+    if (await rawValues.getAttribute("open") !== null) throw new Error("Raw JSON must be collapsed by default");
+    if (!await page.locator(".personal-capability-actions").evaluate((actions) => Boolean(actions.compareDocumentPosition(document.querySelector(".personal-capability-raw-values")) & Node.DOCUMENT_POSITION_FOLLOWING))) {
+      throw new Error("Readable configuration actions must precede raw JSON diagnostics");
+    }
+    await rawValues.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    await rawValues.locator("pre").first().waitFor({ state: "visible" });
+    await page.keyboard.press("Enter");
+    if (await rawValues.getAttribute("open") !== null) throw new Error("Raw JSON keyboard collapse failed");
     for (const label of [/^Enabled$/u, /^Report profile/u, /^Goal Channel route/u, /^Timezone/u]) {
       await page.getByLabel(label).waitFor({ state: "visible" });
     }
