@@ -149,7 +149,10 @@ class ChatSessionStore:
         self._recover_managed_turn_completions()
 
     def _session_dir(self, session_id: str) -> Path:
-        return self.sessions_root / _opaque_id(session_id, field="session_id")
+        token = _opaque_id(session_id, field="session_id")
+        if token in {".", ".."}:
+            raise ValueError("session_id must be a compact opaque id")
+        return self.sessions_root / token
 
     def _session_path(self, session_id: str) -> Path:
         return self._session_dir(session_id) / "session.json"
